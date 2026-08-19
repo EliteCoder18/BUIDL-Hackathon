@@ -71,3 +71,27 @@ test("proof generation is idempotent for one job key", async (t) => {
   assert.equal(second.data.id, first.data.id);
   assert.equal(second.data.creditcoinTxHash, first.data.creditcoinTxHash);
 });
+
+test("auction returns no signed quotes when the risk model abstains", async (t) => {
+  const runtime = await createLocalChainRuntime({ sepoliaPort: 0, creditcoinPort: 0 });
+  t.after(() => runtime.close());
+  const riskClient = {
+    async score() {
+      return {
+        failureProbabilityBps: 5_000,
+        modelVersion: "uncertain-model",
+        modelHash: `0x${"22".repeat(32)}`,
+        features: [],
+        confidence: 0.2,
+        abstain: true,
+        source: "shap-service",
+      };
+    },
+  };
+  const saga = createDemoSaga(runtime, { riskClient });
+  const job = await saga.createJob(mandate);
+
+  const auction = await saga.openAuction(job.data.jobKey);
+
+  assert.deepEqual(auction.data.quotes, []);
+});

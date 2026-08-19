@@ -34,6 +34,10 @@ test("command API drives a mandate through successful cross-chain settlement", a
   const auction = await requestJson(api, "POST", `/v1/jobs/${jobKey}/open-auction`, {});
   assert.equal(auction.body.data.quotes.length, 3);
   assert.match(auction.body.data.quotes[1].signature, /^0x[0-9a-f]{130}$/i);
+  assert.equal(auction.body.data.quotes[1].riskProfile.source, "deterministic-fallback");
+  assert.equal(auction.body.data.quotes[1].riskProfile.features.length, 6);
+  assert.ok(auction.body.data.quotes[1].llmExplanation.topRisks.length > 0);
+  assert.match(auction.body.data.quotes[1].llmExplanation.protectiveTerms, /20% junior/);
 
   const accepted = await requestJson(api, "POST", "/v1/policies", { jobKey, quoteIndex: 1 });
   assert.equal(accepted.body.events.at(-1).type, "POLICY_LOCKED");
@@ -48,9 +52,12 @@ test("command API drives a mandate through successful cross-chain settlement", a
   const policy = await requestJson(api, "GET", `/v1/policies/${policyId}`);
   const vault = await requestJson(api, "GET", "/v1/vault");
   const agents = await requestJson(api, "GET", "/v1/agents");
+  const risk = await requestJson(api, "GET", "/v1/agents/0/risk");
   assert.equal(policy.body.state, "SETTLED_SUCCESS");
   assert.equal(vault.body.reserved, "0");
   assert.equal(agents.body.agents.length, 2);
+  assert.equal(risk.body.features.length, 6);
+  assert.equal(risk.body.source, "deterministic-fallback");
 });
 
 test("command API rejects malformed commands before invoking a saga", async () => {

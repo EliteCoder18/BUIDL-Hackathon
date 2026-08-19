@@ -1,6 +1,7 @@
 import { Wallet } from "ethers";
 
-import { priceQuote } from "../underwriter/risk-engine.mjs";
+import { createRiskClient } from "../underwriter/risk-client.mjs";
+import { explainQuote } from "../underwriter/explanation.mjs";
 import { DemoStore } from "./demo-store.mjs";
 import { LocalProofBridge } from "../local-chain/local-proof-bridge.mjs";
 
@@ -17,17 +18,24 @@ const QUOTE_TYPES = {
   ],
 };
 const STRATEGIES = ["conservative", "balanced", "aggressive"];
+const STRATEGY_MULTIPLIERS = [1.35, 1, 0.72];
 const ZERO_JOB_KEY = `0x${"00".repeat(32)}`;
 
 function transaction(chain, receipt) {
   return { chain, hash: receipt.hash, blockNumber: receipt.blockNumber };
 }
 
-export function createDemoSaga(runtime, { store = new DemoStore(), proofBridge = new LocalProofBridge(runtime) } = {}) {
+export function createDemoSaga(runtime, {
+  store = new DemoStore(),
+  proofBridge = new LocalProofBridge(runtime),
+  riskClient = createRiskClient({ baseUrl: process.env.RISK_SERVICE_URL ?? "http://127.0.0.1:8000" }),
+} = {}) {
   const nonces = new Map(runtime.accounts.underwriters.map((account) => [account.address, 0n]));
 
   async function buildQuotes(agentId, coverageAmount, jobKey) {
     const agent = store.requireAgent(agentId);
+    const riskProfile = await riskClient.score(agent.history);
+    if (riskProfile.abstain) return {};
     const latestBlock = await runtime.creditcoin.provider.getBlock("latest");
     const validUntil = BigInt(latestBlock.timestamp + 600);
     const domain = {
@@ -37,20 +45,37 @@ export function createDemoSaga(runtime, { store = new DemoStore(), proofBridge =
       verifyingContract: await runtime.contracts.policy.getAddress(),
     };
     const entries = await Promise.all(runtime.accounts.underwriters.map(async (underwriter, index) => {
-      const risk = priceQuote(agent.history, { coverageAmount, strategy: STRATEGIES[index] });
+      const failureProbabilityBps = Math.max(100, Math.min(9_500, Math.round(riskProfile.failureProbabilityBps * STRATEGY_MULTIPLIERS[index])));
+      const premiumBps = Math.max(75, Math.min(3_000, Math.round(failureProbabilityBps * 1.35 + 50)));
+      const premiumAmount = coverageAmount * BigInt(premiumBps) / 10_000n;
+      const juniorAmount = coverageAmount / 5n;
       const nonce = nonces.get(underwriter.address) ?? 0n;
       const quote = {
         jobKey,
         underwriter: underwriter.address,
         coverageAmount,
-        premiumAmount: risk.premiumAmount,
-        juniorAmount: risk.juniorAmount,
+        premiumAmount,
+        juniorAmount,
         validUntil,
-        modelHash: risk.modelHash,
+        modelHash: riskProfile.modelHash,
         nonce,
       };
       const signature = await new Wallet(underwriter.privateKey).signTypedData(domain, QUOTE_TYPES, quote);
-      return { ...quote, ...risk, signature, strategy: STRATEGIES[index] };
+      const factors = [...riskProfile.features]
+        .sort((a, b) => Math.abs(b.shapValue) - Math.abs(a.shapValue))
+        .map((feature) => ({ ...feature, label: `${feature.name.replaceAll("_", " ")} (${feature.value})` }));
+      const llmExplanation = await explainQuote({ failureProbabilityBps, premiumBps, factors, strategy: STRATEGIES[index] });
+      return {
+        ...quote,
+        failureProbabilityBps,
+        premiumBps,
+        seniorAmount: coverageAmount - juniorAmount,
+        factors,
+        riskProfile,
+        llmExplanation,
+        signature,
+        strategy: STRATEGIES[index],
+      };
     }));
     return Object.fromEntries(entries.map((quote) => [quote.strategy, quote]));
   }
@@ -98,7 +123,7 @@ export function createDemoSaga(runtime, { store = new DemoStore(), proofBridge =
     async openAuction(jobKey) {
       const job = store.requireJob(jobKey);
       const byStrategy = await buildQuotes(job.agentId, job.coverageAmount, jobKey);
-      const quotes = STRATEGIES.map((strategy) => byStrategy[strategy]);
+      const quotes = STRATEGIES.map((strategy) => byStrategy[strategy]).filter(Boolean);
       store.quotes.set(jobKey, quotes);
       job.state = "AUCTION_ACTIVE";
       return { data: { jobKey, quotes }, events: [{ type: "OPEN_AUCTION" }], transactions: [] };
@@ -207,6 +232,7 @@ export function createDemoSaga(runtime, { store = new DemoStore(), proofBridge =
 
     getState() { return store.snapshot(); },
     getAgents() { return [...store.agents.values()]; },
+    async getRisk(agentId) { return riskClient.score(store.requireAgent(agentId).history); },
     getJob(jobKey) { return store.requireJob(jobKey); },
     getQuotes(jobKey) { return store.quotes.get(jobKey) ?? []; },
     getPolicy(policyId) { return store.requirePolicy(policyId); },

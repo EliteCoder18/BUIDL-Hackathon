@@ -65,8 +65,7 @@ async function handleSagaRoute({ request, url, saga }) {
     const agentId = decodeURIComponent(agentRiskRoute[1]);
     const agent = saga.getAgents().find((entry) => entry.agentId === agentId);
     if (!agent) return json({ code: "NOT_FOUND", error: "agent not found" }, 404);
-    const risk = priceQuote(agent.history, { coverageAmount: 100_000_000n, strategy: "balanced" });
-    return json({ agentId, attestedFeatures: agent.history, failureProbabilityBps: risk.failureProbabilityBps, modelVersion: MODEL_VERSION, modelHash: risk.modelHash, factors: risk.factors });
+    return json({ agentId, attestedFeatures: agent.history, ...await saga.getRisk(agentId) });
   }
 
   if (request.method === "POST" && url.pathname === "/v1/jobs") return json(await saga.createJob(validateJobInput(await request.json())));
