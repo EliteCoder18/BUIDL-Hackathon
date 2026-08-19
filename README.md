@@ -71,6 +71,8 @@ The quote service signs all three EIP-712 quotes when its `CREDITCOIN_CHAIN_ID`,
 - Vault withdrawals exclude capital reserved for active policies; junior capital is slashed first on a failure.
 - This is still hackathon code: use mock tokens only, run a manual review before testnet demonstrations, and do not use it with real capital.
 
+See [threat model](docs/threat-model.md) and [three-minute demo script](docs/demo-script.md) for submission-ready review material.
+
 ## Demo checklist
 
 1. Seed two agents with ten historical success/violation/expiry outcomes.
