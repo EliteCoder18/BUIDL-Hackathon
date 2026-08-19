@@ -40,7 +40,7 @@ npm run api
 cd apps/web && npm install && npm run dev
 ```
 
-The contract compile test resolves `@gluwa/usc-contracts` directly, so it catches the Attestcoin adapter integration boundary even where Foundry is not installed. If Foundry is available, `foundry.toml` is ready for `forge build` and future fuzz/invariant suites.
+The contract compile test resolves `@gluwa/usc-contracts` directly, and the local Ganache EVM test executes ERC-8004-bound jobs through success, violation, and permissionless expiry. This catches the source-chain integration boundary even where Foundry is not installed. If Foundry is available, `foundry.toml` is ready for `forge build` and future fuzz/invariant suites.
 
 ## Testnet deployment
 

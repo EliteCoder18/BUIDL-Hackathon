@@ -6,7 +6,7 @@ import { ContractFactory, JsonRpcProvider, Wallet } from "ethers";
 const root = path.resolve("contracts/src");
 const sources = Object.fromEntries(walk(root).map((file) => [path.relative(root, file), { content: fs.readFileSync(file, "utf8") }]));
 sources["@gluwa/usc-contracts/contracts/decoding/EvmV1Decoder.sol"] = { content: fs.readFileSync("node_modules/@gluwa/usc-contracts/contracts/decoding/EvmV1Decoder.sol", "utf8") };
-const compiled = JSON.parse(solc.compile(JSON.stringify({ language: "Solidity", sources, settings: { optimizer: { enabled: true, runs: 200 }, outputSelection: { "*": { "*": ["abi", "evm.bytecode.object"] } } } })));
+const compiled = JSON.parse(solc.compile(JSON.stringify({ language: "Solidity", sources, settings: { evmVersion: "shanghai", optimizer: { enabled: true, runs: 200 }, outputSelection: { "*": { "*": ["abi", "evm.bytecode.object"] } } } })));
 const errors = (compiled.errors ?? []).filter((entry) => entry.severity === "error");
 if (errors.length) throw new Error(errors.map((entry) => entry.formattedMessage).join("\n"));
 
