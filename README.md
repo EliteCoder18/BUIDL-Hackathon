@@ -2,7 +2,7 @@
 
 **Hire any AI agent. Market prices failure. Bond pays when trust breaks.**
 
-TrustFutures is a testnet-only, cross-chain performance-bond market for ERC-8004 AI agents. A treasury client funds an objective Sepolia mandate. Competing underwriters price its failure risk, stake a 20% first-loss tranche, and draw the remaining 80% from senior LP liquidity on Creditcoin. Attestcoin proves the source-chain outcome before a policy settles.
+TrustFutures is a testnet-only, cross-chain performance-bond market for ERC-8004 AI agents. A treasury client funds an objective Sepolia mandate. Competing underwriters price its failure risk, stake a 20% first-loss tranche, and draw the remaining 80% from senior LP liquidity on Creditcoin. Attestcoin proves the source-chain outcome before a policy settles. See [production-readiness boundary](docs/production-readiness.md).
 
 No production funds. No legal insurance claim. No token or DAO.
 
