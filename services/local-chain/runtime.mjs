@@ -46,7 +46,7 @@ export async function createLocalChainRuntime({ sepoliaPort = 8545, creditcoinPo
     creditcoin = await startChain(CREDITCOIN_CHAIN_ID, creditcoinPort);
     const sepoliaAccounts = await chainAccounts(sepolia);
     const creditcoinAccounts = await chainAccounts(creditcoin);
-    const [sepoliaDeployer, sepoliaAgent] = sepoliaAccounts;
+    const [sepoliaDeployer, sepoliaAgent, sepoliaAgentTwo] = sepoliaAccounts;
     const [creditcoinDeployer, , lp, ...underwriterPool] = creditcoinAccounts;
     const underwriters = underwriterPool.slice(0, 3);
 
@@ -57,6 +57,7 @@ export async function createLocalChainRuntime({ sepoliaPort = 8545, creditcoinPo
     const jobs = await deploy(sepoliaDeployer.signer, "TreasuryJobManager.sol", "TreasuryJobManager", [await identity.getAddress()]);
 
     await wait(identity.mint(sepoliaAgent.address));
+    await wait(identity.mint(sepoliaAgentTwo.address));
     await wait(sepoliaUsdc.mint(sepoliaDeployer.address, 10_000_000_000n));
     await wait(sepoliaWeth.mint(await dex.getAddress(), 10_000_000_000n));
 
@@ -114,6 +115,10 @@ export async function createLocalChainRuntime({ sepoliaPort = 8545, creditcoinPo
       accounts: {
         client: { address: sepoliaDeployer.address, sepoliaSigner: sepoliaDeployer.signer, creditcoinSigner: creditcoinDeployer.signer },
         agent: { address: sepoliaAgent.address, signer: sepoliaAgent.signer, agentId: 0n },
+        agents: [
+          { address: sepoliaAgent.address, signer: sepoliaAgent.signer, agentId: 0n },
+          { address: sepoliaAgentTwo.address, signer: sepoliaAgentTwo.signer, agentId: 1n },
+        ],
         lp,
         underwriters: underwriters.map((account, index) => ({ ...account, strategy: ["conservative", "balanced", "aggressive"][index] })),
       },

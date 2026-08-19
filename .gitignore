@@ -4,5 +4,6 @@ apps/web/.next/
 .env
 .env.local
 coverage/
+output/
 __pycache__/
 .venv/

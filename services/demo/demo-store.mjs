@@ -12,6 +12,10 @@ const seededHistory = (overrides = {}) => ({
 
 export class DemoStore {
   constructor() {
+    this.reset();
+  }
+
+  reset() {
     this.agents = new Map([
       ["0", { agentId: "0", name: "Treasury Delta", history: seededHistory() }],
       ["1", { agentId: "1", name: "Liquidity Sigma", history: seededHistory({ successCount: 8, violationCount: 1, meanSlippageBps: 39 }) }],
@@ -20,6 +24,7 @@ export class DemoStore {
     this.quotes = new Map();
     this.policies = new Map();
     this.proofs = new Map();
+    return this.snapshot();
   }
 
   requireAgent(agentId) {

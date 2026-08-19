@@ -57,6 +57,9 @@ export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quo
 
 async function handleSagaRoute({ request, url, saga }) {
   if (request.method === "GET" && url.pathname === "/v1/demo/state") return json(saga.getState());
+  if (request.method === "POST" && url.pathname === "/v1/demo/reset") {
+    return json({ data: saga.reset(), events: [{ type: "RESET" }], transactions: [] });
+  }
   if (request.method === "GET" && url.pathname === "/v1/agents") return json({ agents: saga.getAgents() });
   if (request.method === "GET" && url.pathname === "/v1/vault") return json(await saga.getVault());
 

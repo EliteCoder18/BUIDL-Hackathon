@@ -35,7 +35,7 @@ _signal = (
     + _X[:, 4] / 4_000.0
     + _X[:, 5] / 3_500.0
 )
-_y = (_signal > 0.48).astype(int)
+_y = (_signal > 0.75).astype(int)
 
 _tree_model = GradientBoostingClassifier(max_depth=3, random_state=8004).fit(_X, _y)
 _calibrated_model = CalibratedClassifierCV(

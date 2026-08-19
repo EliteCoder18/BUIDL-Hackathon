@@ -4,6 +4,7 @@ import test from "node:test";
 import { createApi } from "../services/api/app.mjs";
 import { createDemoSaga } from "../services/demo/demo-saga.mjs";
 import { createLocalChainRuntime } from "../services/local-chain/runtime.mjs";
+import { createRiskClient } from "../services/underwriter/risk-client.mjs";
 
 async function requestJson(api, method, pathname, body) {
   const response = await api.handle(new Request(`http://local${pathname}`, {
@@ -17,7 +18,8 @@ async function requestJson(api, method, pathname, body) {
 test("command API drives a mandate through successful cross-chain settlement", async (t) => {
   const runtime = await createLocalChainRuntime({ sepoliaPort: 0, creditcoinPort: 0 });
   t.after(() => runtime.close());
-  const api = createApi({ saga: createDemoSaga(runtime) });
+  const riskClient = createRiskClient({ fetchImpl: async () => { throw new Error("offline in deterministic API test"); } });
+  const api = createApi({ saga: createDemoSaga(runtime, { riskClient }) });
 
   const created = await requestJson(api, "POST", "/v1/jobs", {
     agentId: "0",
@@ -75,4 +77,14 @@ test("command API rejects malformed commands before invoking a saga", async () =
   const invalidOutcome = await requestJson(api, "POST", `/v1/jobs/0x${"11".repeat(32)}/execute`, { outcome: "corrupt" });
   assert.equal(invalidOutcome.response.status, 400);
   assert.equal(invalidOutcome.body.code, "INVALID_OUTCOME");
+});
+
+test("embedded API can reset presentation state without redeploying chains", async (t) => {
+  const runtime = await createLocalChainRuntime({ sepoliaPort: 0, creditcoinPort: 0 });
+  t.after(() => runtime.close());
+  const api = createApi({ saga: createDemoSaga(runtime) });
+  const reset = await requestJson(api, "POST", "/v1/demo/reset", {});
+  assert.equal(reset.response.status, 200);
+  assert.equal(reset.body.data.jobs.length, 0);
+  assert.deepEqual(reset.body.events, [{ type: "RESET" }]);
 });

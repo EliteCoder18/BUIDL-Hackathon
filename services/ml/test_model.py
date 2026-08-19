@@ -38,3 +38,15 @@ def test_out_of_distribution_features_force_underwriter_abstention():
 
     assert result["abstain"] is True
     assert result["confidence"] < 0.5
+
+
+def test_strong_attested_history_is_not_near_certain_failure():
+    result = score_risk({
+        "failure_rate": 0.1,
+        "mean_slippage_bps": 24,
+        "mean_lateness_bps": 42,
+        "amount_vs_p95_bps": 9_400,
+        "deadline_tightness_bps": 280,
+        "volatility_bps": 300,
+    })
+    assert result["failureProbabilityBps"] < 3_000

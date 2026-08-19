@@ -181,7 +181,8 @@ export function createDemoSaga(runtime, {
       if (!job.policyId) throw new Error("policy must be locked before execution");
       if (requestedOutcome !== "success" && requestedOutcome !== "violation") throw new Error("invalid outcome");
       await (await runtime.contracts.dex.setOutputBps(requestedOutcome === "success" ? 10_000 : 9_000)).wait();
-      const tx = await runtime.contracts.jobs.connect(runtime.accounts.agent.signer).execute(job.jobId);
+      const agentAccount = runtime.accounts.agents?.find((entry) => String(entry.agentId) === String(job.agentId)) ?? runtime.accounts.agent;
+      const tx = await runtime.contracts.jobs.connect(agentAccount.signer).execute(job.jobId);
       const receipt = await tx.wait();
       const onchain = await runtime.contracts.jobs.jobs(job.jobId);
       const outcome = Number(onchain.outcome) === 1 ? "success" : Number(onchain.outcome) === 2 ? "violation" : "expired";
@@ -231,6 +232,7 @@ export function createDemoSaga(runtime, {
     },
 
     getState() { return store.snapshot(); },
+    reset() { return store.reset(); },
     getAgents() { return [...store.agents.values()]; },
     async getRisk(agentId) { return riskClient.score(store.requireAgent(agentId).history); },
     getJob(jobKey) { return store.requireJob(jobKey); },

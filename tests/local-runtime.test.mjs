@@ -10,6 +10,7 @@ test("local runtime deploys both chains and seeds underwriting capital", async (
   assert.equal((await runtime.sepolia.provider.getNetwork()).chainId, 11155111n);
   assert.equal((await runtime.creditcoin.provider.getNetwork()).chainId, 102031n);
   assert.equal(await runtime.contracts.identity.ownerOf(0), runtime.accounts.agent.address);
+  assert.equal(await runtime.contracts.identity.ownerOf(1), runtime.accounts.agents[1].address);
   assert.equal(await runtime.contracts.vault.totalAssets(), 800_000_000n);
 
   for (const underwriter of runtime.accounts.underwriters) {
