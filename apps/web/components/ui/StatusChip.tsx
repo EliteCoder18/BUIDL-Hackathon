@@ -8,10 +8,9 @@ export interface StatusChipProps {
 
 export function StatusChip({ label, tone = "neutral", pulse = false }: StatusChipProps) {
   return (
-    <span className={`status-chip status-chip--${tone}${pulse ? " status-chip--pulse" : ""}`}>
+    <span className={`signal-chip status-chip status-chip--${tone}${pulse ? " status-chip--pulse" : ""}`}>
       <span className="status-chip__dot" aria-hidden="true" />
       {label}
     </span>
   );
 }
-

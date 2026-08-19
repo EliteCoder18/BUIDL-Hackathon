@@ -17,7 +17,9 @@ export function TechnicalPanel({
   ...props
 }: TechnicalPanelProps) {
   return (
-    <Element className={`technical-panel ${className}`.trim()} {...props}>
+    <Element className={`instrument-panel technical-panel ${className}`.trim()} {...props}>
+      <span className="instrument-panel__arc instrument-panel__arc--top" aria-hidden="true" />
+      <span className="instrument-panel__arc instrument-panel__arc--bottom" aria-hidden="true" />
       {(eyebrow || title || action) && (
         <header className="technical-panel__header">
           <div>
@@ -31,4 +33,3 @@ export function TechnicalPanel({
     </Element>
   );
 }
-

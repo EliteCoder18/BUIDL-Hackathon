@@ -26,43 +26,57 @@ export function TechnicalShell({
   modeLabel = "LOCAL TWIN",
 }: TechnicalShellProps) {
   const pathname = usePathname();
+  const activeItem = NAV_ITEMS.find((item) => item.href === "/" ? pathname === "/" : pathname.startsWith(item.href));
 
   return (
-    <div className="technical-shell">
-      <aside className="technical-shell__sidebar">
-        <Link className="technical-shell__brand" href="/" aria-label="TrustFutures operations home">
-          <span className="technical-shell__brand-mark" aria-hidden="true">TF</span>
-          <span><strong>TRUST</strong>FUTURES</span>
+    <div className="eclipse-shell">
+      <div className="eclipse-ambience" aria-hidden="true">
+        <span className="eclipse-ambience__halo" />
+        <span className="eclipse-ambience__orbit eclipse-ambience__orbit--one" />
+        <span className="eclipse-ambience__orbit eclipse-ambience__orbit--two" />
+        <span className="eclipse-ambience__grain" />
+      </div>
+
+      <header className="orbital-dock">
+        <Link className="orbital-brand" href="/" aria-label="TrustFutures operations home">
+          <span className="orbital-brand__sigil" aria-hidden="true"><i /><i /></span>
+          <span className="orbital-brand__wordmark"><strong>TRUST</strong><em>FUTURES</em></span>
+          <small>RISK OBSERVATORY</small>
         </Link>
-        <p className="technical-shell__descriptor">AI AGENT RELIABILITY MARKET</p>
-        <nav className="technical-shell__nav" aria-label="Primary">
+
+        <nav className="orbital-nav" aria-label="Primary">
           {NAV_ITEMS.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             return (
-              <Link key={item.href} href={item.href} className={`technical-shell__nav-item${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined}>
-                <span>{item.index}</span>
-                {item.label}
+              <Link key={item.href} href={item.href} className={`orbital-nav__item${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined}>
+                <span>{item.index}</span><b>{item.label}</b>
               </Link>
             );
           })}
         </nav>
-        <div className="technical-shell__network-stack" aria-label="Connected networks">
-          <span><i className="network-dot network-dot--green" />SEPOLIA</span>
-          <span><i className="network-dot network-dot--cyan" />ATTESTCOIN</span>
-          <span><i className="network-dot network-dot--amber" />CREDITCOIN CC3</span>
-        </div>
-      </aside>
-      <div className="technical-shell__workspace">
-        <header className="technical-shell__topbar">
-          <div className="technical-shell__system-state">
-            <StatusChip label={apiOnline ? "API SYNCHRONIZED" : "API OFFLINE"} tone={apiOnline ? "success" : "danger"} pulse={apiOnline} />
-            <span className="technical-shell__mode">{modeLabel}</span>
+
+        <div className="orbital-system">
+          <div className="orbital-system__state">
+            <StatusChip label={apiOnline ? "SYNCHRONIZED" : "OFFLINE"} tone={apiOnline ? "success" : "danger"} pulse={apiOnline} />
+            <span className="orbital-system__mode">{modeLabel}</span>
           </div>
-          {walletControl && <div className="technical-shell__wallet">{walletControl}</div>}
-        </header>
-        <main className="technical-shell__content">{children}</main>
-      </div>
+          {walletControl && <div className="orbital-system__wallet">{walletControl}</div>}
+        </div>
+      </header>
+
+      <aside className="edge-coordinate" aria-hidden="true">
+        <span>{activeItem?.index ?? "00"}</span>
+        <i />
+        <b>{activeItem?.label.toUpperCase() ?? "MARKET"}</b>
+      </aside>
+
+      <aside className="chain-constellation" aria-label="Connected networks">
+        <span><i className="network-dot network-dot--sepolia" />SEPOLIA</span>
+        <span><i className="network-dot network-dot--attestcoin" />ATTESTCOIN</span>
+        <span><i className="network-dot network-dot--creditcoin" />CREDITCOIN CC3</span>
+      </aside>
+
+      <main className="eclipse-workspace">{children}</main>
     </div>
   );
 }
-

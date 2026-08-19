@@ -9,11 +9,10 @@ export interface MetricReadoutProps {
 
 export function MetricReadout({ label, value, detail, tone = "default" }: MetricReadoutProps) {
   return (
-    <div className={`metric-readout metric-readout--${tone}`}>
+    <div className={`satellite-readout metric-readout metric-readout--${tone}`}>
       <span className="metric-readout__label">{label}</span>
       <strong className="metric-readout__value">{value}</strong>
       {detail && <span className="metric-readout__detail">{detail}</span>}
     </div>
   );
 }
-

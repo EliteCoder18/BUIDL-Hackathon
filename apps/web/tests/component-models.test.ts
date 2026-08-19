@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { buildSagaSteps } from "../components/dashboard/saga-model";
 import { calculateWaterfall } from "../components/policy/loss-waterfall-model";
@@ -53,4 +54,22 @@ test("risk features preserve sign and normalise bar magnitude against the strong
     { name: "Lateness", shapValue: -1.1, direction: "protective", magnitude: 34.375 },
     { name: "History", shapValue: 0, direction: "neutral", magnitude: 0 },
   ]);
+});
+
+test("application shell uses the Eclipse orbital dock instead of the old sidebar", () => {
+  const source = readFileSync(new URL("../components/ui/TechnicalShell.tsx", import.meta.url), "utf8");
+  assert.match(source, /orbital-dock/);
+  assert.match(source, /edge-coordinate/);
+  assert.match(source, /chain-constellation/);
+  assert.doesNotMatch(source, /technical-shell__sidebar/);
+});
+
+test("cross-chain topology renders an eclipse, orbit rings, and distinct chain instruments", () => {
+  const source = readFileSync(new URL("../components/cross-chain/CrossChainTopology.tsx", import.meta.url), "utf8");
+  assert.match(source, /EclipseBody/);
+  assert.match(source, /OrbitRings/);
+  assert.match(source, /SepoliaCrystal/);
+  assert.match(source, /VerifierAperture/);
+  assert.match(source, /CapitalGyroscope/);
+  assert.match(source, /Semi-implicit Euler/);
 });
