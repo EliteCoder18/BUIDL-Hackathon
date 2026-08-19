@@ -1,16 +1,21 @@
 import { ProofQueue } from "../prover/proof-queue.mjs";
 import { priceQuote } from "../underwriter/risk-engine.mjs";
+import { ApiInputError, assertHex, parseOutcome, parseQuoteIndex, validateJobInput } from "./validation.mjs";
 
 const MODEL_VERSION = "trustfutures-risk-v1-fixed-seed";
-const json = (body, status = 200) => Response.json(body, { status });
+const json = (body, status = 200) => Response.json(serialize(body), { status });
 
-export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quoteSigner = null } = {}) {
+export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quoteSigner = null, saga = null } = {}) {
   return {
     async handle(request) {
       const url = new URL(request.url);
       try {
         if (request.method === "GET" && url.pathname === "/healthz") {
-          return json({ ok: true, service: "trustfutures-api" });
+          return json({ ok: true, service: "trustfutures-api", mode: saga ? "embedded-local" : undefined });
+        }
+        if (saga) {
+          const routed = await handleSagaRoute({ request, url, saga });
+          if (routed) return routed;
         }
         if (request.method === "POST" && url.pathname === "/v1/quotes") {
           const { jobKey, coverageAmount, history } = await request.json();
@@ -42,10 +47,75 @@ export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quo
         }
         return json({ error: "not found" }, 404);
       } catch (error) {
-        return json({ error: error instanceof Error ? error.message : "invalid request" }, 400);
+        if (error instanceof ApiInputError) return json({ code: error.code, error: error.message }, error.status);
+        const message = error instanceof Error ? error.message : "invalid request";
+        return json({ code: domainErrorCode(message), error: message }, 400);
       }
     },
   };
+}
+
+async function handleSagaRoute({ request, url, saga }) {
+  if (request.method === "GET" && url.pathname === "/v1/demo/state") return json(saga.getState());
+  if (request.method === "GET" && url.pathname === "/v1/agents") return json({ agents: saga.getAgents() });
+  if (request.method === "GET" && url.pathname === "/v1/vault") return json(await saga.getVault());
+
+  const agentRiskRoute = url.pathname.match(/^\/v1\/agents\/([^/]+)\/risk$/);
+  if (request.method === "GET" && agentRiskRoute) {
+    const agentId = decodeURIComponent(agentRiskRoute[1]);
+    const agent = saga.getAgents().find((entry) => entry.agentId === agentId);
+    if (!agent) return json({ code: "NOT_FOUND", error: "agent not found" }, 404);
+    const risk = priceQuote(agent.history, { coverageAmount: 100_000_000n, strategy: "balanced" });
+    return json({ agentId, attestedFeatures: agent.history, failureProbabilityBps: risk.failureProbabilityBps, modelVersion: MODEL_VERSION, modelHash: risk.modelHash, factors: risk.factors });
+  }
+
+  if (request.method === "POST" && url.pathname === "/v1/jobs") return json(await saga.createJob(validateJobInput(await request.json())));
+  if (request.method === "POST" && url.pathname === "/v1/policies") {
+    const body = await request.json();
+    return json(await saga.acceptPolicy({ jobKey: assertHex(body.jobKey, 32, "jobKey"), quoteIndex: parseQuoteIndex(body.quoteIndex) }));
+  }
+  if (request.method === "POST" && url.pathname === "/v1/proofs") {
+    const body = await request.json();
+    return json(await saga.proveOutcome(assertHex(body.jobKey, 32, "jobKey")));
+  }
+
+  const auction = url.pathname.match(/^\/v1\/jobs\/(0x[0-9a-fA-F]{64})\/open-auction$/);
+  if (request.method === "POST" && auction) return json(await saga.openAuction(assertHex(auction[1], 32, "jobKey")));
+  const execution = url.pathname.match(/^\/v1\/jobs\/(0x[0-9a-fA-F]{64})\/execute$/);
+  if (request.method === "POST" && execution) {
+    const body = await request.json();
+    return json(await saga.executeJob(assertHex(execution[1], 32, "jobKey"), parseOutcome(body.outcome)));
+  }
+  const settlement = url.pathname.match(/^\/v1\/policies\/(0x[0-9a-fA-F]{64})\/settle$/);
+  if (request.method === "POST" && settlement) return json(await saga.settlePolicy(assertHex(settlement[1], 32, "policyId")));
+
+  const job = url.pathname.match(/^\/v1\/jobs\/(0x[0-9a-fA-F]{64})$/);
+  if (request.method === "GET" && job) return json(saga.getJob(job[1]));
+  const quotes = url.pathname.match(/^\/v1\/quotes\/(0x[0-9a-fA-F]{64})$/);
+  if (request.method === "GET" && quotes) return json({ jobKey: quotes[1], quotes: saga.getQuotes(quotes[1]) });
+  const policy = url.pathname.match(/^\/v1\/policies\/(0x[0-9a-fA-F]{64})$/);
+  if (request.method === "GET" && policy) return json(saga.getPolicy(policy[1]));
+  const proof = url.pathname.match(/^\/v1\/proofs\/(0x[0-9a-fA-F]{64})$/);
+  if (request.method === "GET" && proof) {
+    const value = saga.getProof(proof[1]);
+    return value ? json(value) : json({ code: "NOT_FOUND", error: "proof not found" }, 404);
+  }
+  return null;
+}
+
+function domainErrorCode(message) {
+  if (/quote.*expired|expired.*quote/i.test(message)) return "QUOTE_EXPIRED";
+  if (/stake|junior/i.test(message)) return "INSUFFICIENT_JUNIOR";
+  if (/proof.*confirmed|proof.*ready/i.test(message)) return "PROOF_NOT_READY";
+  if (/not found/i.test(message)) return "NOT_FOUND";
+  return "WRONG_SAGA_STATE";
+}
+
+function serialize(value) {
+  if (typeof value === "bigint") return value.toString();
+  if (Array.isArray(value)) return value.map(serialize);
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined).map(([key, item]) => [key, serialize(item)]));
+  return value;
 }
 
 function serializeQuote(quote) {

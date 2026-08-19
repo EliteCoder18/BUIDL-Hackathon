@@ -206,5 +206,19 @@ export function createDemoSaga(runtime, { store = new DemoStore(), proofBridge =
     },
 
     getState() { return store.snapshot(); },
+    getAgents() { return [...store.agents.values()]; },
+    getJob(jobKey) { return store.requireJob(jobKey); },
+    getQuotes(jobKey) { return store.quotes.get(jobKey) ?? []; },
+    getPolicy(policyId) { return store.requirePolicy(policyId); },
+    getProof(jobKey) { return store.proofs.get(jobKey) ?? null; },
+    async getVault() {
+      const [totalAssets, reserved, freeAssets, totalShares] = await Promise.all([
+        runtime.contracts.vault.totalAssets(),
+        runtime.contracts.vault.reserved(),
+        runtime.contracts.vault.freeAssets(),
+        runtime.contracts.vault.totalShares(),
+      ]);
+      return { totalAssets, reserved, freeAssets, totalShares };
+    },
   };
 }

@@ -1,12 +1,19 @@
 import { createServer } from "node:http";
 import { createApi } from "./app.mjs";
+import { createDemoSaga } from "../demo/demo-saga.mjs";
+import { createLocalChainRuntime } from "../local-chain/runtime.mjs";
 import { signerFromEnvironment } from "../underwriter/quote-signer.mjs";
 import { PostgresProofQueue } from "../prover/postgres-proof-queue.mjs";
 
+const demoMode = process.env.TRUSTFUTURES_DEMO === "true";
+const runtime = demoMode ? await createLocalChainRuntime({
+  sepoliaPort: Number(process.env.SEPOLIA_LOCAL_PORT ?? 8545),
+  creditcoinPort: Number(process.env.CREDITCOIN_LOCAL_PORT ?? 9545),
+}) : null;
 const queue = process.env.DATABASE_URL ? new PostgresProofQueue(process.env.DATABASE_URL) : undefined;
 if (queue) await queue.migrate();
-const api = createApi({ quoteSigner: signerFromEnvironment(), queue });
-createServer(async (req, res) => {
+const api = createApi({ quoteSigner: signerFromEnvironment(), queue, saga: runtime ? createDemoSaga(runtime) : null });
+const server = createServer(async (req, res) => {
   const origin = process.env.CORS_ORIGIN ?? "http://localhost:3000";
   const cors = {
     "access-control-allow-origin": origin,
@@ -34,4 +41,14 @@ createServer(async (req, res) => {
     res.writeHead(413, { ...cors, "content-type": "application/json" });
     res.end(JSON.stringify({ error: error instanceof Error ? error.message : "request failed" }));
   }
-}).listen(process.env.PORT ?? 3001, () => console.log("TrustFutures API listening"));
+});
+
+server.listen(process.env.PORT ?? 3001, () => console.log(`TrustFutures API listening (${demoMode ? "embedded-local" : "service"})`));
+
+async function shutdown() {
+  server.close();
+  if (queue) await queue.close();
+  if (runtime) await runtime.close();
+}
+process.once("SIGINT", shutdown);
+process.once("SIGTERM", shutdown);
