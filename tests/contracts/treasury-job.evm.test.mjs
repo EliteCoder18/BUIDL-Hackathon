@@ -45,9 +45,10 @@ test("TreasuryJobManager executes ERC-8004 mandates through success, violation, 
   await (await manager.connect(agent).execute(1)).wait();
   assert.equal((await manager.jobs(1)).outcome, 2n);
 
-  const expiryDeadline = BigInt((await provider.getBlock("latest")).timestamp) + 1n;
+  // Ganache advances the timestamp when mining the create transaction, so leave a real margin.
+  const expiryDeadline = BigInt((await provider.getBlock("latest")).timestamp) + 30n;
   await (await manager.createJob(0, await usdc.getAddress(), await weth.getAddress(), await dex.getAddress(), 100_000n, 99_000n, expiryDeadline)).wait();
-  await provider.send("evm_increaseTime", [10]);
+  await provider.send("evm_increaseTime", [60]);
   await provider.send("evm_mine", []);
   await (await manager.finalizeExpired(2)).wait();
   assert.equal((await manager.jobs(2)).outcome, 3n);
