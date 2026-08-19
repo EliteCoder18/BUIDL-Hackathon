@@ -26,7 +26,7 @@ MVP coverage is capped at **1,000 mUSDC**. Quotes contain `jobKey`, `underwriter
 - `contracts/src/CoverageVault.sol`, `UnderwriterRegistry.sol`, `PolicyManager.sol`: ERC-4626-style senior accounting, junior capital and nonce controls, EIP-712 quote acceptance, and 20/80 loss waterfall.
 - `services/prover/attestcoin-worker.ts`: `@gluwa/usc-sdk` worker that waits for attestation, gets a continuity proof, and submits it to CC3. `PostgresProofQueue` makes retries durable when `DATABASE_URL` is set.
 - `services/underwriter/risk-engine.mjs`: deterministic bounded risk score; `services/underwriter/explanation.mjs` keeps OpenAI explanation advisory with deterministic fallback.
-- `services/api`: REST routes for quotes, proof queue, and agent risk. `apps/web`: Next.js dashboard.
+- `services/api`: REST routes for quotes, proof queue, and agent risk. `apps/web`: Next.js dashboard with wagmi, viem, RainbowKit wallet connection, and live quote API hydration.
 
 ## Run locally
 

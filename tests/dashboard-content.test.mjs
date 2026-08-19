@@ -7,4 +7,6 @@ test("dashboard presents market, proof, and pooled-capital views", () => {
   for (const label of ["Agent market", "Quote auction", "Proof explorer", "LP vault", "Hire any AI agent"]) {
     assert.match(page, new RegExp(label));
   }
+  assert.match(page, /ConnectButton/);
+  assert.match(page, /NEXT_PUBLIC_API_URL/);
 });
