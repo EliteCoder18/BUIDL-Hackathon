@@ -9,6 +9,9 @@ export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quo
     async handle(request) {
       const url = new URL(request.url);
       try {
+        if (request.method === "GET" && url.pathname === "/healthz") {
+          return json({ ok: true, service: "trustfutures-api" });
+        }
         if (request.method === "POST" && url.pathname === "/v1/quotes") {
           const { jobKey, coverageAmount, history } = await request.json();
           if (!jobKey || !history) return json({ error: "jobKey and attested history are required" }, 400);

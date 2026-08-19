@@ -14,6 +14,11 @@ test("quote endpoint returns three bounded underwriting choices", async () => {
   assert.equal(body.quotes[0].juniorAmount, "20000000");
 });
 
+test("health endpoint supports deployment readiness checks", async () => {
+  const response = await createApi().handle(new Request("http://local/healthz"));
+  assert.deepEqual(await response.json(), { ok: true, service: "trustfutures-api" });
+});
+
 test("proof endpoint is idempotent and risk endpoint exposes attested feature basis", async () => {
   const api = createApi({ agentRisk: new Map([["1842", history]]) });
   const first = await api.handle(new Request("http://local/v1/proofs", { method: "POST", body: JSON.stringify({ jobKey: "0xjob", sourceTxHash: "0xtx" }) }));
