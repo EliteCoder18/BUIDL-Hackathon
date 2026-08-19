@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20} from "./Interfaces.sol";
+import {IERC20, IERC8004IdentityRegistry} from "./Interfaces.sol";
 
 interface IJobDEX {
     function swap(uint256 amountIn, uint256 minOut, address recipient) external returns (uint256 amountOut);
@@ -13,6 +13,7 @@ contract TreasuryJobManager {
     struct Job {
         address client;
         address agent;
+        uint256 agentId;
         address inputToken;
         address outputToken;
         address dex;
@@ -23,13 +24,19 @@ contract TreasuryJobManager {
     }
 
     uint256 public nextJobId;
+    IERC8004IdentityRegistry public immutable identityRegistry;
     mapping(uint256 => Job) public jobs;
 
     event JobCreated(uint256 indexed jobId, address indexed client, address indexed agent, uint256 amountIn, uint256 minOut, uint64 deadline);
     event JobSettled(uint256 indexed jobId, Outcome outcome, uint256 amountOut);
 
+    constructor(IERC8004IdentityRegistry identityRegistry_) {
+        require(address(identityRegistry_) != address(0), "registry");
+        identityRegistry = identityRegistry_;
+    }
+
     function createJob(
-        address agent,
+        uint256 agentId,
         IERC20 inputToken,
         IERC20 outputToken,
         address dex,
@@ -37,11 +44,12 @@ contract TreasuryJobManager {
         uint256 minOut,
         uint64 deadline
     ) external returns (uint256 jobId) {
-        require(agent != address(0) && dex != address(0), "address");
+        address agent = identityRegistry.ownerOf(agentId);
+        require(dex != address(0), "address");
         require(amountIn > 0 && minOut > 0 && deadline > block.timestamp, "terms");
         require(inputToken.transferFrom(msg.sender, address(this), amountIn), "funding");
         jobId = nextJobId++;
-        jobs[jobId] = Job(msg.sender, agent, address(inputToken), address(outputToken), dex, amountIn, minOut, deadline, Outcome.Pending);
+        jobs[jobId] = Job(msg.sender, agent, agentId, address(inputToken), address(outputToken), dex, amountIn, minOut, deadline, Outcome.Pending);
         emit JobCreated(jobId, msg.sender, agent, amountIn, minOut, deadline);
     }
 

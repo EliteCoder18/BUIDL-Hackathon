@@ -8,6 +8,11 @@ interface IERC20 {
     function balanceOf(address account) external view returns (uint256);
 }
 
+/// @notice ERC-8004 identity registry is ERC-721 compatible for agent ownership.
+interface IERC8004IdentityRegistry {
+    function ownerOf(uint256 agentId) external view returns (address);
+}
+
 interface IAttestcoinOutcomeAdapter {
     function consumeOutcome(bytes32 jobKey) external returns (uint8 outcome);
 }

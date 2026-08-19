@@ -21,7 +21,7 @@ MVP coverage is capped at **1,000 mUSDC**. Quotes contain `jobKey`, `underwriter
 
 ## Components
 
-- `contracts/src/TreasuryJobManager.sol`: funded, constrained treasury-rebalance mandate; `Success`, `Violation`, or permissionlessly finalized `Expired`.
+- `contracts/src/TreasuryJobManager.sol`: funded, constrained treasury-rebalance mandate bound to an ERC-8004 identity-registry `agentId`; `Success`, `Violation`, or permissionlessly finalized `Expired`.
 - `contracts/src/AttestcoinOutcomeAdapter.sol`: validates a real CC3 Native Query Verifier proof, decodes the attested Sepolia `JobSettled` event via Gluwa's `EvmV1Decoder`, validates source contract/chain, and prevents replay.
 - `contracts/src/CoverageVault.sol`, `UnderwriterRegistry.sol`, `PolicyManager.sol`: ERC-4626-style senior accounting, junior capital and nonce controls, EIP-712 quote acceptance, and 20/80 loss waterfall.
 - `services/prover/attestcoin-worker.ts`: `@gluwa/usc-sdk` worker that waits for attestation, gets a continuity proof, and submits it to CC3. `PostgresProofQueue` makes retries durable when `DATABASE_URL` is set.
@@ -50,7 +50,7 @@ Copy `.env.example` to `.env` and export the values into your shell. Then run:
 npm run deploy:testnets
 ```
 
-The script deploys fresh Sepolia source contracts and fresh CC3 policy contracts, links the vault/registry manager, and writes `deployments/testnet.json`. It intentionally cannot deploy without a funded testnet deployer key and RPC URLs. Never commit `.env` or deployment keys.
+The script deploys fresh Sepolia source contracts against `ERC8004_IDENTITY_REGISTRY_ADDRESS` (the official Sepolia registry) and fresh CC3 policy contracts, links the vault/registry manager, and writes `deployments/testnet.json`. It intentionally cannot deploy without a funded testnet deployer key and RPC URLs. Never commit `.env` or deployment keys.
 
 For each source `JobSettled` transaction, call `proveAndSubmit` from `services/prover/attestcoin-worker.ts`; it uses the CC3 proof builder flow from Gluwa's official USC examples. Submit the proof first, then call `PolicyManager.settle(policyId)` to consume it exactly once.
 

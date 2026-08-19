@@ -45,7 +45,9 @@ const ccWallet = deployer.connect(new JsonRpcProvider(process.env.CREDITCOIN_RPC
 const usdc = await deploy(sepoliaWallet, "MockERC20.sol", "MockERC20", ["Mock USDC", "mUSDC"]);
 const weth = await deploy(sepoliaWallet, "MockERC20.sol", "MockERC20", ["Mock WETH", "mWETH"]);
 const dex = await deploy(sepoliaWallet, "MockDEX.sol", "MockDEX", [await usdc.getAddress(), await weth.getAddress()]);
-const jobs = await deploy(sepoliaWallet, "TreasuryJobManager.sol", "TreasuryJobManager");
+const identityRegistry = process.env.ERC8004_IDENTITY_REGISTRY_ADDRESS;
+if (!identityRegistry) throw new Error("Missing ERC8004_IDENTITY_REGISTRY_ADDRESS (official Sepolia registry)");
+const jobs = await deploy(sepoliaWallet, "TreasuryJobManager.sol", "TreasuryJobManager", [identityRegistry]);
 await (await usdc.mint(sepoliaWallet.address, 10_000_000_000n)).wait();
 await (await weth.mint(await dex.getAddress(), 10_000_000_000n)).wait();
 
@@ -60,7 +62,7 @@ const policy = await deploy(ccWallet, "PolicyManager.sol", "PolicyManager", [awa
 await (await vault.setManager(await policy.getAddress())).wait();
 await (await registry.setManager(await policy.getAddress())).wait();
 
-const manifest = { generatedAt: new Date().toISOString(), sepolia: { mockUsdc: await usdc.getAddress(), mockWeth: await weth.getAddress(), mockDex: await dex.getAddress(), treasuryJobManager: await jobs.getAddress() }, creditcoin: { mockUsdc: await ccUsdc.getAddress(), evmV1Decoder: await decoder.getAddress(), coverageVault: await vault.getAddress(), underwriterRegistry: await registry.getAddress(), attestcoinOutcomeAdapter: await adapter.getAddress(), policyManager: await policy.getAddress() } };
+const manifest = { generatedAt: new Date().toISOString(), sepolia: { erc8004IdentityRegistry: identityRegistry, mockUsdc: await usdc.getAddress(), mockWeth: await weth.getAddress(), mockDex: await dex.getAddress(), treasuryJobManager: await jobs.getAddress() }, creditcoin: { mockUsdc: await ccUsdc.getAddress(), evmV1Decoder: await decoder.getAddress(), coverageVault: await vault.getAddress(), underwriterRegistry: await registry.getAddress(), attestcoinOutcomeAdapter: await adapter.getAddress(), policyManager: await policy.getAddress() } };
 fs.mkdirSync("deployments", { recursive: true });
 fs.writeFileSync("deployments/testnet.json", `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(JSON.stringify(manifest, null, 2));
