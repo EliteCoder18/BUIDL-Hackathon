@@ -73,3 +73,12 @@ test("cross-chain topology renders an eclipse, orbit rings, and distinct chain i
   assert.match(source, /CapitalGyroscope/);
   assert.match(source, /Semi-implicit Euler/);
 });
+
+test("Eclipse typography keeps technical labels readable at small sizes", () => {
+  const source = readFileSync(new URL("../app/styles.css", import.meta.url), "utf8");
+  assert.match(source, /--micro-copy:\s*8px/);
+  assert.match(source, /--label-copy:\s*9px/);
+  assert.match(source, /--nav-copy:\s*10px/);
+  assert.match(source, /\.metric-readout__label[^}]+var\(--label-copy\)/s);
+  assert.match(source, /\.proof-rail__content code[^}]+var\(--micro-copy\)/s);
+});
