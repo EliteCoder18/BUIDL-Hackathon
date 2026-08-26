@@ -82,3 +82,7 @@ See [threat model](docs/threat-model.md) and [three-minute demo script](docs/dem
 5. Request new quotes; show the deterministic risk price rises after the attested failure.
 
 Deployment addresses, explorer links, video, deck, and a real proof transaction should be added to `deployments/testnet.json` and this README after the funded testnet run.
+
+## Contributors
+
+- Harkirat Singh
