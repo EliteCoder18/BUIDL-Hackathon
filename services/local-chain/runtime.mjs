@@ -1,4 +1,5 @@
 import ganache from "ganache";
+import net from "node:net";
 import { ContractFactory, JsonRpcProvider } from "ethers";
 
 import { localArtifact } from "./compile.mjs";
@@ -13,11 +14,27 @@ async function startChain(chainId, requestedPort) {
     logging: { quiet: true },
     wallet: { mnemonic: MNEMONIC, totalAccounts: 10, defaultBalance: 10_000 },
   });
-  await server.listen(requestedPort, "127.0.0.1");
+  // Ganache's uWebSockets listener treats port 0 as an occupied literal port
+  // on this platform. Ask Node for an ephemeral port first, then hand its
+  // concrete value to Ganache.
+  const portToUse = requestedPort === 0 ? await availablePort() : requestedPort;
+  await server.listen(portToUse, "127.0.0.1");
   const address = server.address();
   const port = typeof address === "object" && address ? address.port : requestedPort;
   const url = `http://127.0.0.1:${port}`;
   return { chainId, server, port, url, provider: new JsonRpcProvider(url) };
+}
+
+function availablePort() {
+  return new Promise((resolve, reject) => {
+    const probe = net.createServer();
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", () => {
+      const address = probe.address();
+      if (!address || typeof address === "string") return reject(new Error("unable to allocate local test port"));
+      probe.close((error) => error ? reject(error) : resolve(address.port));
+    });
+  });
 }
 
 async function chainAccounts(chain) {
