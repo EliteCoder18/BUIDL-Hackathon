@@ -61,7 +61,7 @@ For each source `JobSettled` transaction, call `proveAndSubmit` from `services/p
 - `GET /v1/proofs/:jobKey` — state and transaction metadata.
 - `GET /v1/agents/:agentId/risk` — attested feature basis, model version, score.
 
-The quote service signs all three EIP-712 quotes when its `CREDITCOIN_CHAIN_ID`, `POLICY_MANAGER_ADDRESS`, and three underwriter keys are configured; otherwise it deliberately returns unsigned preview quotes. The on-chain policy manager rejects unsigned, expired, modified, or replayed quotes. The model is fixed-seed/synthetic for the MVP; only agent history is intended to be derived from attested outcomes. This disclosure belongs in any submission.
+The quote service signs all three EIP-712 quotes when its `CREDITCOIN_CHAIN_ID`, `POLICY_MANAGER_ADDRESS`, and three underwriter keys are configured; otherwise it deliberately returns unsigned preview quotes. The on-chain policy manager rejects unsigned, expired, modified, or replayed quotes. The model trains only on committed fixed-seed synthetic data; settled attested outcomes are runtime evidence and never training data. Risk responses disclose dataset/model hashes, calibration, drift, OOD state, and settled live-outcome count. Generate testnet evidence only with `npm run bootstrap:attested-history -- --execute --count 50`; it alternates outcomes and writes proof-confirmed records separately from training data.
 
 ## Security model
 
