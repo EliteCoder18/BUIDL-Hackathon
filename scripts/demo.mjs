@@ -18,7 +18,7 @@ export function buildDemoProcesses({ hasPythonRuntime = existsSync(path.join(roo
       name: "web",
       command: process.platform === "win32" ? "npm.cmd" : "npm",
       args: ["--prefix", "apps/web", "run", "dev"],
-      env: { ...shared, NEXT_PUBLIC_API_URL: "http://127.0.0.1:3001" },
+      env: { ...shared, NEXT_PUBLIC_API_URL: "http://localhost:3001" },
     },
   ];
   if (hasPythonRuntime) {

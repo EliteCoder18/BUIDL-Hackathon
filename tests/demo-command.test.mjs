@@ -7,6 +7,7 @@ test("demo command starts authoritative API and web with embedded mode enabled",
   const processes = buildDemoProcesses({ hasPythonRuntime: false });
   assert.equal(processes[0].name, "api");
   assert.equal(processes[0].env.TRUSTFUTURES_DEMO, "true");
+  assert.equal(processes.find(({ name }) => name === "web").env.NEXT_PUBLIC_API_URL, "http://localhost:3001");
   assert.ok(processes.some(({ name }) => name === "web"));
   assert.ok(!processes.some(({ name }) => name === "risk"));
 });

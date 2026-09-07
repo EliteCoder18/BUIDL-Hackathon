@@ -4,6 +4,7 @@ import { createDemoSaga } from "../demo/demo-saga.mjs";
 import { createLocalChainRuntime } from "../local-chain/runtime.mjs";
 import { signerFromEnvironment } from "../underwriter/quote-signer.mjs";
 import { PostgresProofQueue } from "../prover/postgres-proof-queue.mjs";
+import { corsHeaders } from "./cors.mjs";
 
 const demoMode = process.env.TRUSTFUTURES_DEMO === "true";
 const runtime = demoMode ? await createLocalChainRuntime({
@@ -14,12 +15,7 @@ const queue = process.env.DATABASE_URL ? new PostgresProofQueue(process.env.DATA
 if (queue) await queue.migrate();
 const api = createApi({ quoteSigner: signerFromEnvironment(), queue, saga: runtime ? createDemoSaga(runtime) : null });
 const server = createServer(async (req, res) => {
-  const origin = process.env.CORS_ORIGIN ?? "http://localhost:3000";
-  const cors = {
-    "access-control-allow-origin": origin,
-    "access-control-allow-methods": "GET,POST,OPTIONS",
-    "access-control-allow-headers": "content-type",
-  };
+  const cors = corsHeaders(req.headers.origin);
   if (req.method === "OPTIONS") {
     res.writeHead(204, cors);
     res.end();

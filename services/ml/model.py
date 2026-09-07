@@ -6,9 +6,14 @@ import numpy as np,shap
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.frozen import FrozenEstimator
 from sklearn.ensemble import GradientBoostingClassifier
-from data.generate_dataset import DATASET_NAME
-from evaluation import FEATURES,split_agents,matrix_and_labels,metrics_from_predictions,EvaluationBundle
-from lineage import model_hash
+try:
+ from .data.generate_dataset import DATASET_NAME
+ from .evaluation import FEATURES,split_agents,matrix_and_labels,metrics_from_predictions,EvaluationBundle
+ from .lineage import model_hash
+except ImportError:
+ from data.generate_dataset import DATASET_NAME
+ from evaluation import FEATURES,split_agents,matrix_and_labels,metrics_from_predictions,EvaluationBundle
+ from lineage import model_hash
 MODEL_VERSION,SEED="trustfutures-gbm-v1",8004;HYPERPARAMETERS={"max_depth":3,"random_state":SEED};DATA_FILE=Path(__file__).parent/"data"/DATASET_NAME
 def build_model(records,payload=None):
  s=split_agents(records);rows=sorted(records,key=lambda r:r["eventId"]);X,y=matrix_and_labels(rows);agents=np.array([r["agentId"] for r in rows]);tr,va,te=(np.isin(agents,s[k]) for k in ("train","validation","test"));base=GradientBoostingClassifier(**HYPERPARAMETERS).fit(X[tr],y[tr]);classes=set(y[va]);method="isotonic" if len(classes)==2 else "not-applied-insufficient-validation-classes";model=CalibratedClassifierCV(FrozenEstimator(base),method="isotonic").fit(X[va],y[va]) if method=="isotonic" else base;p=np.clip(model.predict_proba(X[te])[:,1],.01,.95);raw=DATA_FILE.read_bytes() if payload is None else payload;return {"model":model,"base":base,"splits":s,"X":X,"agents":agents,"minimum":X[tr].min(0),"maximum":X[tr].max(0),"hash":model_hash(model_bytes=pickle.dumps(model),manifest_hash=sha256(raw).hexdigest(),splits=s,features=FEATURES,seed=SEED,hyperparameters=HYPERPARAMETERS),"datasetHash":sha256(raw).hexdigest(),"evaluation":EvaluationBundle(method,[] if method=="isotonic" else ["insufficient-validation-classes"],metrics_from_predictions(y[te],p)),"categories":{r["mandateCategory"] for r in rows},"knownAgents":set(agents)}
