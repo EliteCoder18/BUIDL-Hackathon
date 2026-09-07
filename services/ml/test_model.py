@@ -1,4 +1,4 @@
-from model import FEATURES, MODEL_HASH, MODEL_VERSION, score_risk
+from model import FEATURES, MODEL_HASH, MODEL_VERSION, RECORDS, build_model, score_risk
 
 
 STRONG_FEATURES = {
@@ -66,3 +66,9 @@ def test_score_discloses_data_lineage_and_abstains_for_unseen_category():
     assert result["dataLineage"]["datasetHash"].startswith("sha256:")
     assert result["abstain"] is True
     assert "unseen-mandate-category" in result["diagnostics"]["abstentionReasons"]
+
+
+def test_changing_dataset_bytes_changes_the_runtime_pinned_model_hash():
+    original = b'\n'.join(__import__("json").dumps(row, sort_keys=True).encode() for row in RECORDS)
+    changed = original.replace(b'"swap"', b'"payment"', 1)
+    assert build_model(RECORDS, original)["hash"] != build_model(RECORDS, changed)["hash"]
