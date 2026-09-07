@@ -1,6 +1,6 @@
 import { priceQuote } from "./risk-engine.mjs";
 
-export function featuresFromHistory(history) {
+export function featuresFromHistory(history, context = {}) {
   const total = history.successCount + history.violationCount + history.expiryCount;
   return {
     failure_rate: total === 0 ? 0.5 : (history.violationCount + history.expiryCount) / total,
@@ -9,9 +9,9 @@ export function featuresFromHistory(history) {
     amount_vs_p95_bps: history.amountVsP95Bps,
     deadline_tightness_bps: history.deadlineTightnessBps,
     volatility_bps: history.volatilityBps,
-    agent_id: "agent-00",
-    mandate_category: "swap",
-    coverage_size: 100_000,
+    agent_id: context.agentId ?? "agent-00",
+    mandate_category: context.mandateCategory ?? "swap",
+    coverage_size: context.coverageSize ?? 100_000,
     live_outcome_count: total,
   };
 }
@@ -55,12 +55,12 @@ function validServiceResult(value) {
 
 export function createRiskClient({ baseUrl = "http://127.0.0.1:8000", fetchImpl = fetch } = {}) {
   return {
-    async score(history) {
+    async score(history, context = {}) {
       try {
         const response = await fetchImpl(`${baseUrl}/v1/risk`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify(featuresFromHistory(history)),
+          body: JSON.stringify(featuresFromHistory(history, context)),
         });
         if (!response.ok) throw new Error(`risk service ${response.status}`);
         const result = await response.json();

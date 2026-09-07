@@ -1,11 +1,12 @@
 import { ProofQueue } from "../prover/proof-queue.mjs";
 import { priceQuote } from "../underwriter/risk-engine.mjs";
+import { createRiskClient } from "../underwriter/risk-client.mjs";
 import { ApiInputError, assertHex, parseOutcome, parseQuoteIndex, validateJobInput } from "./validation.mjs";
 
 const MODEL_VERSION = "trustfutures-risk-v1-fixed-seed";
 const json = (body, status = 200) => Response.json(serialize(body), { status });
 
-export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quoteSigner = null, saga = null } = {}) {
+export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quoteSigner = null, saga = null, riskClient = createRiskClient() } = {}) {
   return {
     async handle(request) {
       const url = new URL(request.url);
@@ -22,9 +23,14 @@ export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quo
           if (!jobKey || !history) return json({ error: "jobKey and attested history are required" }, 400);
           const coverage = BigInt(coverageAmount);
           if (coverage > 1_000_000_000n) return json({ error: "maximum MVP coverage is 1,000 mUSDC" }, 400);
+          const risk = await riskClient.score(history, { coverageSize: Number(coverage) });
+          if (risk.abstain) return json({ error: "risk model abstained", diagnostics: risk.diagnostics }, 422);
           const rawQuotes = ["conservative", "balanced", "aggressive"].map((strategy, nonce) => {
             const quote = priceQuote(history, { coverageAmount: coverage, strategy });
-            return { jobKey, coverageAmount: coverage, ...quote, validUntil: Math.floor(Date.now() / 1000) + 600, nonce, underwriter: "0x0000000000000000000000000000000000000000" };
+            const multiplier = strategy === "conservative" ? 1.35 : strategy === "aggressive" ? .72 : 1;
+            const failureProbabilityBps = Math.max(100, Math.min(9_500, Math.round(risk.failureProbabilityBps * multiplier)));
+            const premiumBps = Math.max(75, Math.min(3_000, Math.round(failureProbabilityBps * 1.35 + 50)));
+            return { jobKey, coverageAmount: coverage, ...quote, failureProbabilityBps, premiumBps, premiumAmount: coverage * BigInt(premiumBps) / 10_000n, modelHash: risk.modelHash, validUntil: Math.floor(Date.now() / 1000) + 600, nonce, underwriter: "0x0000000000000000000000000000000000000000" };
           });
           const signedQuotes = quoteSigner ? await Promise.all(rawQuotes.map(quoteSigner)) : rawQuotes;
           return json({ quotes: signedQuotes.map(serializeQuote), signing: quoteSigner ? "EIP-712 signed" : "Quotes require configured underwriter keys before on-chain acceptance." });

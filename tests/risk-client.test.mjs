@@ -28,7 +28,7 @@ test("risk client preserves calibrated SHAP service output", async () => {
     fetchImpl: async () => Response.json(serviceResult),
   });
 
-  const result = await client.score(history);
+  const result = await client.score(history, { agentId: "agent-01", mandateCategory: "rebalance", coverageSize: 125_000 });
 
   assert.deepEqual(result, { ...serviceResult, source: "shap-service" });
 });
