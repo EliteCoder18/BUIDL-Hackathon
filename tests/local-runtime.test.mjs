@@ -24,6 +24,8 @@ test("local runtime seeds funded client, executable DEX, and configured policy m
 
   assert.equal(await runtime.contracts.sepoliaUsdc.balanceOf(runtime.accounts.client.address), 10_000_000_000n);
   assert.equal(await runtime.contracts.sepoliaWeth.balanceOf(await runtime.contracts.dex.getAddress()), 10_000_000_000n);
+  assert.equal(runtime.manifest.sepolia.mockDexExecutor, await runtime.contracts.mockDexExecutor.getAddress());
+  assert.equal(await runtime.contracts.jobs.approvedExecutors(await runtime.contracts.mockDexExecutor.getAddress()), true);
   assert.equal(await runtime.contracts.vault.manager(), await runtime.contracts.policy.getAddress());
   assert.equal(await runtime.contracts.registry.manager(), await runtime.contracts.policy.getAddress());
 });

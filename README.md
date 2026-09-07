@@ -21,7 +21,8 @@ MVP coverage is capped at **1,000 mUSDC**. Quotes contain `jobKey`, `underwriter
 
 ## Components
 
-- `contracts/src/TreasuryJobManager.sol`: funded, constrained treasury-rebalance mandate bound to an ERC-8004 identity-registry `agentId`; `Success`, `Violation`, or permissionlessly finalized `Expired`.
+- `contracts/src/TreasuryJobManager.sol`: funded, constrained treasury-rebalance mandate bound to an ERC-8004 identity-registry `agentId`; approved execution adapters produce `Success`, `Violation`, or permissionlessly finalized `Expired`.
+- `contracts/src/MockDexExecutor.sol`, `UniswapV3Executor.sol`: venue adapters keep exchange-specific calls outside the mandate contract. The manager grants exact allowances and verifies the client's observed output-token balance before success.
 - `contracts/src/AttestcoinOutcomeAdapter.sol`: validates a real CC3 Native Query Verifier proof, decodes the attested Sepolia `JobSettled` event via Gluwa's `EvmV1Decoder`, validates source contract/chain, and prevents replay.
 - `contracts/src/CoverageVault.sol`, `UnderwriterRegistry.sol`, `PolicyManager.sol`: ERC-4626-style senior accounting, junior capital and nonce controls, EIP-712 quote acceptance, and 20/80 loss waterfall.
 - `services/prover/attestcoin-worker.ts`: `@gluwa/usc-sdk` worker that waits for attestation, gets a continuity proof, and submits it to CC3. `PostgresProofQueue` makes retries durable when `DATABASE_URL` is set.
@@ -81,7 +82,7 @@ See [threat model](docs/threat-model.md) and [three-minute demo script](docs/dem
 4. Show failure: force `MockDEX` below `minOut`, prove outcome, settle full coverage junior-first.
 5. Request new quotes; show the deterministic risk price rises after the attested failure.
 
-Deployment addresses, explorer links, video, deck, and a real proof transaction should be added to `deployments/testnet.json` and this README after the funded testnet run.
+Deployment addresses, explorer links, and the real v2 proof loop are recorded below and in `deployments/testnet.json`. The submission video and deck remain separate presentation artifacts.
 
 ### Reproducible public testnet run
 
@@ -97,18 +98,27 @@ After deployment or a completed smoke run, `npm run sync:testnets` copies the ma
 
 ### Confirmed public deployment
 
-The authoritative address and receipt record is [`deployments/testnet.json`](deployments/testnet.json).
+The authoritative v2 address and receipt record is [`deployments/testnet.json`](deployments/testnet.json). The completed v1 evidence is retained in [`deployments/testnet-v1-2026-09-06.json`](deployments/testnet-v1-2026-09-06.json) and its archived journal. The deployed v2 path uses `MockDexExecutor`; no public Uniswap-compatible adapter deployment is claimed.
 
 | Network | Contract | Explorer |
 | --- | --- | --- |
 | Sepolia | erc8004IdentityRegistry | [0x8004A818BFB912233c491871b3d84c89A494BD9e](https://sepolia.etherscan.io/address/0x8004A818BFB912233c491871b3d84c89A494BD9e) |
-| Sepolia | mockUsdc | [0x815438629fFF40Df72d61FF84C85209085d526a4](https://sepolia.etherscan.io/address/0x815438629fFF40Df72d61FF84C85209085d526a4) |
-| Sepolia | mockWeth | [0xF4d6E442d0Ca875008A89C372a143aAF3D01F3ae](https://sepolia.etherscan.io/address/0xF4d6E442d0Ca875008A89C372a143aAF3D01F3ae) |
-| Sepolia | mockDex | [0x025896e39d7cdE833De022e721266A11e4c1659C](https://sepolia.etherscan.io/address/0x025896e39d7cdE833De022e721266A11e4c1659C) |
-| Sepolia | treasuryJobManager | [0x91eD4049Bab2A6f9f8eA1C9BcbC5316918D3CEB8](https://sepolia.etherscan.io/address/0x91eD4049Bab2A6f9f8eA1C9BcbC5316918D3CEB8) |
-| Creditcoin CC3 | mockUsdc | [0x7e8133cAdD8827B6b80Fb93cca745A4AC148c43d](https://creditcoin-testnet.blockscout.com/address/0x7e8133cAdD8827B6b80Fb93cca745A4AC148c43d) |
-| Creditcoin CC3 | evmV1Decoder | [0x91eD4049Bab2A6f9f8eA1C9BcbC5316918D3CEB8](https://creditcoin-testnet.blockscout.com/address/0x91eD4049Bab2A6f9f8eA1C9BcbC5316918D3CEB8) |
-| Creditcoin CC3 | coverageVault | [0xF4d6E442d0Ca875008A89C372a143aAF3D01F3ae](https://creditcoin-testnet.blockscout.com/address/0xF4d6E442d0Ca875008A89C372a143aAF3D01F3ae) |
-| Creditcoin CC3 | underwriterRegistry | [0x025896e39d7cdE833De022e721266A11e4c1659C](https://creditcoin-testnet.blockscout.com/address/0x025896e39d7cdE833De022e721266A11e4c1659C) |
-| Creditcoin CC3 | attestcoinOutcomeAdapter | [0x42D005c6c66f57Ddb9D178d0BE507b7174F2610A](https://creditcoin-testnet.blockscout.com/address/0x42D005c6c66f57Ddb9D178d0BE507b7174F2610A) |
-| Creditcoin CC3 | policyManager | [0x9E0cfe67A2332cf003615dca6764bEc0184BD302](https://creditcoin-testnet.blockscout.com/address/0x9E0cfe67A2332cf003615dca6764bEc0184BD302) |
+| Sepolia | mockUsdc | [0x2b0112DDFffA8B25bE584Fac48f0a6016c2Aa7Be](https://sepolia.etherscan.io/address/0x2b0112DDFffA8B25bE584Fac48f0a6016c2Aa7Be) |
+| Sepolia | mockWeth | [0x51580561DE644d46344736f6452331EFC45cd299](https://sepolia.etherscan.io/address/0x51580561DE644d46344736f6452331EFC45cd299) |
+| Sepolia | mockDex | [0x112C46b943d144DC35acDBbf6082F74a272D9ac2](https://sepolia.etherscan.io/address/0x112C46b943d144DC35acDBbf6082F74a272D9ac2) |
+| Sepolia | mockDexExecutor | [0x46Cf5A53042fc93cC41aF9406CcB113Ec2a64177](https://sepolia.etherscan.io/address/0x46Cf5A53042fc93cC41aF9406CcB113Ec2a64177) |
+| Sepolia | treasuryJobManager | [0x85F34Ddd31de129257c5E43c2FadAc279715baF9](https://sepolia.etherscan.io/address/0x85F34Ddd31de129257c5E43c2FadAc279715baF9) |
+| Creditcoin CC3 | mockUsdc | [0x3b0bcD79ED6e9f01f54351487F99B9257e1c7E96](https://creditcoin-testnet.blockscout.com/address/0x3b0bcD79ED6e9f01f54351487F99B9257e1c7E96) |
+| Creditcoin CC3 | evmV1Decoder | [0x5CFD5659c9E8E52fD5006e0CC4F0475500edE10e](https://creditcoin-testnet.blockscout.com/address/0x5CFD5659c9E8E52fD5006e0CC4F0475500edE10e) |
+| Creditcoin CC3 | coverageVault | [0xDa571807bE414387cF9B71143f06E8d1F0Fb4D7E](https://creditcoin-testnet.blockscout.com/address/0xDa571807bE414387cF9B71143f06E8d1F0Fb4D7E) |
+| Creditcoin CC3 | underwriterRegistry | [0xC539087C1c35ff0b3b8DcA3BE7988bC9B34F574D](https://creditcoin-testnet.blockscout.com/address/0xC539087C1c35ff0b3b8DcA3BE7988bC9B34F574D) |
+| Creditcoin CC3 | attestcoinOutcomeAdapter | [0x76a75FC7b7889bAd6FEddA071094f9C702E4EE89](https://creditcoin-testnet.blockscout.com/address/0x76a75FC7b7889bAd6FEddA071094f9C702E4EE89) |
+| Creditcoin CC3 | policyManager | [0x5cCd9246A78BdCa8d40cFCeFd4B9C807c139495a](https://creditcoin-testnet.blockscout.com/address/0x5cCd9246A78BdCa8d40cFCeFd4B9C807c139495a) |
+
+### Confirmed v2 proof and payout loop
+
+- ERC-8004 agent: `10130`; job: `0`; policy: `0xab99a1a1a5b657e3a09b3da4ea7fe01904e752cec15fa7ad658493481cf96281`.
+- Sepolia adapter-backed violation: [0x45649de2…42140d](https://sepolia.etherscan.io/tx/0x45649de23f877a8df5d1386400fd53b8b0dc4ce36ce7d71836120d592c42140d).
+- Real Attestcoin proof submitted on CC3: [0x148b2e97…145fc](https://creditcoin-testnet.blockscout.com/tx/0x148b2e979059acbc4690ef07de7ef0ca3c04d213ca5aeffe8594e7c5b67145fc).
+- CC3 junior-first settlement: [0x46631b26…95cdb](https://creditcoin-testnet.blockscout.com/tx/0x46631b26555f7ff77847d1961cf0bb0460a01de22ecc2283e70e37f1d3f95cdb).
+- Verified payout: `500 mUSDC`; balanced premium increased from `9.25 mUSDC` to `42.35 mUSDC` after the attested failure.

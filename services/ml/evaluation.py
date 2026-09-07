@@ -11,7 +11,8 @@ def matrix_and_labels(records):
  histories={}; rows=sorted(records,key=lambda r:r.get("eventId",r["agentId"])); vectors=[]
  for r in rows:
   h=histories.setdefault(r["agentId"],[]); p95=np.percentile([x["coverageSize"] for x in h] or [r["coverageSize"]],95); failures=sum(x["outcome"]!="success" for x in h)
-  vectors.append([failures/len(h) if h else 0,r["slippageBps"],max(0,(r["expectedOutput"]-r["actualOutput"])*10000/max(1,r["expectedOutput"])),r["coverageSize"]*10000/max(1,p95),10000/max(1,r["deadline"]),r["simulatedVolatilityBps"]]);h.append(r)
+  deadline_tightness_bps=min(10000,1_000_000//max(1,r["deadline"]))
+  vectors.append([failures/len(h) if h else 0,r["slippageBps"],max(0,(r["expectedOutput"]-r["actualOutput"])*10000/max(1,r["expectedOutput"])),r["coverageSize"]*10000/max(1,p95),deadline_tightness_bps,r["simulatedVolatilityBps"]]);h.append(r)
  return np.asarray(vectors,float),np.asarray([r["outcome"]!="success" for r in rows],int)
 def metrics_from_predictions(y,p):
  buckets=[]

@@ -29,25 +29,27 @@ test("TreasuryJobManager executes ERC-8004 mandates through success, violation, 
   const usdc = await deploy(client, "MockERC20.sol", "MockERC20", ["Mock USDC", "mUSDC"]);
   const weth = await deploy(client, "MockERC20.sol", "MockERC20", ["Mock WETH", "mWETH"]);
   const dex = await deploy(client, "MockDEX.sol", "MockDEX", [await usdc.getAddress(), await weth.getAddress()]);
+  const executor = await deploy(client, "MockDexExecutor.sol", "MockDexExecutor", [await dex.getAddress()]);
   const manager = await deploy(client, "TreasuryJobManager.sol", "TreasuryJobManager", [await registry.getAddress()]);
+  await (await manager.setExecutorApproval(await executor.getAddress(), true)).wait();
   await (await registry.mint(await agent.getAddress())).wait();
   await (await usdc.mint(await client.getAddress(), 1_000_000n)).wait();
   await (await weth.mint(await dex.getAddress(), 1_000_000n)).wait();
   await (await usdc.approve(await manager.getAddress(), 1_000_000n)).wait();
   const now = BigInt((await provider.getBlock("latest")).timestamp);
 
-  await (await manager.createJob(0, await usdc.getAddress(), await weth.getAddress(), await dex.getAddress(), 100_000n, 99_000n, now + 3600n)).wait();
+  await (await manager.createJob(0, await usdc.getAddress(), await weth.getAddress(), await executor.getAddress(), 100_000n, 99_000n, now + 3600n)).wait();
   await (await manager.connect(agent).execute(0)).wait();
   assert.equal((await manager.jobs(0)).outcome, 1n);
   assert.equal(await weth.balanceOf(await client.getAddress()), 100_000n);
 
-  await (await manager.createJob(0, await usdc.getAddress(), await weth.getAddress(), await dex.getAddress(), 100_000n, 101_000n, now + 3600n)).wait();
+  await (await manager.createJob(0, await usdc.getAddress(), await weth.getAddress(), await executor.getAddress(), 100_000n, 101_000n, now + 3600n)).wait();
   await (await manager.connect(agent).execute(1)).wait();
   assert.equal((await manager.jobs(1)).outcome, 2n);
 
   // Ganache advances the timestamp when mining the create transaction, so leave a real margin.
   const expiryDeadline = BigInt((await provider.getBlock("latest")).timestamp) + 30n;
-  await (await manager.createJob(0, await usdc.getAddress(), await weth.getAddress(), await dex.getAddress(), 100_000n, 99_000n, expiryDeadline)).wait();
+  await (await manager.createJob(0, await usdc.getAddress(), await weth.getAddress(), await executor.getAddress(), 100_000n, 99_000n, expiryDeadline)).wait();
   await provider.send("evm_increaseTime", [60]);
   await provider.send("evm_mine", []);
   await (await manager.finalizeExpired(2)).wait();

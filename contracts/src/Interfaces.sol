@@ -13,6 +13,17 @@ interface IERC8004IdentityRegistry {
     function ownerOf(uint256 agentId) external view returns (address);
 }
 
+/// @notice Venue-neutral execution boundary used by TreasuryJobManager.
+interface IJobExecutor {
+    function execute(
+        IERC20 inputToken,
+        IERC20 outputToken,
+        uint256 amountIn,
+        uint256 minOut,
+        address recipient
+    ) external returns (uint256 amountOut);
+}
+
 interface IAttestcoinOutcomeAdapter {
     function consumeOutcome(bytes32 jobKey) external returns (uint8 outcome);
 }

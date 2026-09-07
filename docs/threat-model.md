@@ -11,7 +11,10 @@
 | Loss socialization before junior stake | Registry slash transfers junior collateral first, then vault pays senior collateral. |
 | Reentrant policy settlement | `PolicyManager` uses a reentrancy guard and one active policy state transition. |
 | LLM changes economics | Model and signed quote set economics. OpenAI only returns constrained explanation JSON; deterministic fallback handles outages. |
+| Arbitrary swap target drains mandate funds | `TreasuryJobManager` accepts only administrator-approved executors and grants an exact per-execution allowance that is cleared after the call. |
+| Executor reports output it did not deliver | Settlement compares the executor return value with the client's actual output-token balance increase; both must meet `minOut`. |
+| Venue call reverts after pulling input | The nested executor call rolls back, the manager clears its allowance, marks a violation, and returns the retained input to the client. |
 
 ## Residual risk
 
-This is testnet hackathon code. CC3 proof finality latency, official ERC-8004 registry configuration, mock-token controls, oracle-like market-volatility inputs, and wallet key operations require review before any production use. No production funds or legal insurance claims are permitted.
+This is testnet hackathon code. The executor allowlist is controlled by a single deployment administrator, and approved adapter/router bytecode is trusted. CC3 proof finality latency, official ERC-8004 registry configuration, fee-on-transfer or adversarial tokens, mock-token controls, oracle-like market-volatility inputs, and wallet key operations require review before any production use. No production funds or legal insurance claims are permitted.

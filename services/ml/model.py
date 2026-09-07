@@ -22,7 +22,7 @@ def score_risk(f):
  v=np.asarray([float(f[n]) for n in FEATURES]);span=np.maximum(BUNDLE["maximum"]-BUNDLE["minimum"],1e-9);drift=float(np.max(np.maximum(BUNDLE["minimum"]-v,0)/span+np.maximum(v-BUNDLE["maximum"],0)/span));reasons=[]
  if f.get("agent_id","agent-00") not in KNOWN_AGENTS: reasons.append("unknown-agent")
  if f.get("mandate_category","swap") not in KNOWN_CATEGORIES: reasons.append("unseen-mandate-category")
- if f.get("attested_event_valid") is False: reasons.append("invalid-or-stale-attested-event")
+ if int(f.get("live_outcome_count",0))>0 and f.get("attested_event_valid") is False: reasons.append("invalid-or-stale-attested-event")
  if float(f.get("coverage_size",0))>max(r["coverageSize"] for r in RECORDS)*1.25: reasons.append("coverage-above-training-range")
  if drift>.5: reasons.append("numeric-feature-drift")
  confidence=round(max(.05,min(.98,.92/(1+drift*4))),6)

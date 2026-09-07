@@ -72,3 +72,16 @@ def test_changing_dataset_bytes_changes_the_runtime_pinned_model_hash():
     original = b'\n'.join(__import__("json").dumps(row, sort_keys=True).encode() for row in RECORDS)
     changed = original.replace(b'"swap"', b'"payment"', 1)
     assert build_model(RECORDS, original)["hash"] != build_model(RECORDS, changed)["hash"]
+
+
+def test_cold_start_without_an_attested_event_is_not_an_invalid_event():
+    result = score_risk({
+        **STRONG_FEATURES,
+        "agent_id": "agent-00",
+        "mandate_category": "swap",
+        "coverage_size": 100_000,
+        "live_outcome_count": 0,
+        "attested_event_valid": False,
+    })
+
+    assert "invalid-or-stale-attested-event" not in result["diagnostics"]["abstentionReasons"]

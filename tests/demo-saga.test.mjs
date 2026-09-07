@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { createDemoSaga } from "../services/demo/demo-saga.mjs";
 import { createLocalChainRuntime } from "../services/local-chain/runtime.mjs";
+import { createRiskClient } from "../services/underwriter/risk-client.mjs";
 
 const mandate = {
   agentId: "0",
@@ -11,6 +12,7 @@ const mandate = {
   deadlineSeconds: 3600,
   coverageAmount: "100000000",
 };
+const offlineRiskClient = () => createRiskClient({ fetchImpl: async () => { throw new Error("offline test service"); } });
 
 async function createPolicy(saga) {
   const job = await saga.createJob(mandate);
@@ -23,7 +25,7 @@ async function createPolicy(saga) {
 test("success saga confirms a local proof, releases capital, and splits premium", async (t) => {
   const runtime = await createLocalChainRuntime({ sepoliaPort: 0, creditcoinPort: 0 });
   t.after(() => runtime.close());
-  const saga = createDemoSaga(runtime);
+  const saga = createDemoSaga(runtime, { riskClient: offlineRiskClient() });
   const { job, policy } = await createPolicy(saga);
 
   const executed = await saga.executeJob(job.data.jobKey, "success");
@@ -42,7 +44,7 @@ test("success saga confirms a local proof, releases capital, and splits premium"
 test("violation saga pays full coverage junior-first and raises the next premium", async (t) => {
   const runtime = await createLocalChainRuntime({ sepoliaPort: 0, creditcoinPort: 0 });
   t.after(() => runtime.close());
-  const saga = createDemoSaga(runtime);
+  const saga = createDemoSaga(runtime, { riskClient: offlineRiskClient() });
   const before = await saga.quoteForAgent("0", mandate);
   const { job, policy } = await createPolicy(saga);
 
@@ -61,7 +63,7 @@ test("violation saga pays full coverage junior-first and raises the next premium
 test("proof generation is idempotent for one job key", async (t) => {
   const runtime = await createLocalChainRuntime({ sepoliaPort: 0, creditcoinPort: 0 });
   t.after(() => runtime.close());
-  const saga = createDemoSaga(runtime);
+  const saga = createDemoSaga(runtime, { riskClient: offlineRiskClient() });
   const { job } = await createPolicy(saga);
   await saga.executeJob(job.data.jobKey, "success");
 

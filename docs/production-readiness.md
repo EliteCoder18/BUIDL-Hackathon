@@ -9,6 +9,7 @@ TrustFutures is deliberately a **testnet prototype**. The approved plan explicit
 - Vault reserves active coverage; junior collateral is consumed before senior LP assets.
 - API has bounded request body handling, health check, idempotent proof queue, optional Postgres persistence, deterministic quote fallback, and structured LLM fallback.
 - CI and local EVM tests cover source outcomes, quote acceptance, and failure payout.
+- A public v2 Sepolia-to-Attestcoin-to-CC3 failure loop verifies the approved executor, real USC proof submission, junior-first payout, and capital release; transaction evidence is recorded in `deployments/testnet.json`.
 
 ## Required before any mainnet consideration
 

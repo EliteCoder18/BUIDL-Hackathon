@@ -91,9 +91,11 @@ if(process.argv.includes('--preflight')) process.exit(0);
 const usdc = await deploy(sepoliaWallet, "MockERC20.sol", "MockERC20", ["Mock USDC", "mUSDC"]);
 const weth = await deploy(sepoliaWallet, "MockERC20.sol", "MockERC20", ["Mock WETH", "mWETH"]);
 const dex = await deploy(sepoliaWallet, "MockDEX.sol", "MockDEX", [await usdc.getAddress(), await weth.getAddress()]);
+const mockDexExecutor = await deploy(sepoliaWallet, "MockDexExecutor.sol", "MockDexExecutor", [await dex.getAddress()]);
 const identityRegistry = process.env.ERC8004_IDENTITY_REGISTRY_ADDRESS;
 if (!identityRegistry) throw new Error("Missing ERC8004_IDENTITY_REGISTRY_ADDRESS (official Sepolia registry)");
 const jobs = await deploy(sepoliaWallet, "TreasuryJobManager.sol", "TreasuryJobManager", [identityRegistry]);
+await transact(sepoliaWallet, "approve-mock-executor", () => jobs.setExecutorApproval.populateTransaction(mockDexExecutor.target, true));
 await transact(sepoliaWallet, "seed-usdc", () => usdc.mint.populateTransaction(sepoliaWallet.address, 10_000_000_000n));
 await transact(sepoliaWallet, "seed-dex", () => weth.mint.populateTransaction(dex.target, 10_000_000_000n));
 
@@ -122,10 +124,11 @@ for (const [label,actual,expected] of [
   ['policy adapter', await policy.outcomeAdapter(), adapter.target],
   ['policy asset', await policy.asset(), ccUsdc.target],
 ]) if (!same(actual,expected)) throw new Error(`Post-deployment mismatch: ${label}`);
+if (!await jobs.approvedExecutors(mockDexExecutor.target)) throw new Error('Post-deployment mismatch: mock executor approval');
 if (await adapter.sourceChainId() !== 11155111n || await adapter.sourceChainKey() !== BigInt(config.chainKey)) throw new Error('Adapter chain mismatch');
 const manifest = {
   generatedAt: new Date().toISOString(), deployer: deployer.address,
-  sepolia: { chainId:11155111, explorer:'https://sepolia.etherscan.io', erc8004IdentityRegistry:config.identity, mockUsdc:usdc.target, mockWeth:weth.target, mockDex:dex.target, treasuryJobManager:jobs.target },
+  sepolia: { chainId:11155111, explorer:'https://sepolia.etherscan.io', erc8004IdentityRegistry:config.identity, mockUsdc:usdc.target, mockWeth:weth.target, mockDex:dex.target, mockDexExecutor:mockDexExecutor.target, treasuryJobManager:jobs.target },
   creditcoin: { chainId:102031, explorer:'https://creditcoin-testnet.blockscout.com', mockUsdc:ccUsdc.target, evmV1Decoder:decoder.target, coverageVault:vault.target, underwriterRegistry:registry.target, attestcoinOutcomeAdapter:adapter.target, policyManager:policy.target },
   transactions: journal.steps, verification: {roles:true, bytecode:true, sourceChainKey:config.chainKey, checkedAt:new Date().toISOString()},
 };

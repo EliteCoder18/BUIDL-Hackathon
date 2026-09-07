@@ -101,7 +101,7 @@ export function createDemoSaga(runtime, {
         BigInt(agent.agentId),
         await runtime.contracts.sepoliaUsdc.getAddress(),
         await runtime.contracts.sepoliaWeth.getAddress(),
-        await runtime.contracts.dex.getAddress(),
+        await runtime.contracts.mockDexExecutor.getAddress(),
         amountIn,
         minOut,
         deadline,

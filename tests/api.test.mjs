@@ -2,11 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createApi } from "../services/api/app.mjs";
 import { createQuoteSigner } from "../services/underwriter/quote-signer.mjs";
+import { createRiskClient } from "../services/underwriter/risk-client.mjs";
 
 const history = { successCount: 8, violationCount: 1, expiryCount: 1, meanSlippageBps: 20, meanLatenessBps: 5, amountVsP95Bps: 10_200, deadlineTightnessBps: 350, volatilityBps: 280 };
+const offlineRiskClient = () => createRiskClient({ fetchImpl: async () => { throw new Error("offline test service"); } });
 
 test("quote endpoint returns three bounded underwriting choices", async () => {
-  const api = createApi();
+  const api = createApi({ riskClient: offlineRiskClient() });
   const response = await api.handle(new Request("http://local/v1/quotes", { method: "POST", body: JSON.stringify({ jobKey: "0xjob", coverageAmount: "100000000", history, agentId: "agent-00", mandateCategory: "swap", liveOutcomeCount: 0, attestedEventValid: false }) }));
   const body = await response.json();
   assert.equal(response.status, 200);
@@ -43,7 +45,7 @@ test("configured bots return EIP-712 signed quotes without changing model values
     verifyingContract: "0x0000000000000000000000000000000000001234",
     privateKeys: { conservative: `0x${"11".repeat(32)}`, balanced: `0x${"22".repeat(32)}`, aggressive: `0x${"33".repeat(32)}` },
   });
-  const api = createApi({ quoteSigner: signer });
+  const api = createApi({ quoteSigner: signer, riskClient: offlineRiskClient() });
   const response = await api.handle(new Request("http://local/v1/quotes", { method: "POST", body: JSON.stringify({ jobKey: `0x${"44".repeat(32)}`, coverageAmount: "100000000", history, agentId: "agent-00", mandateCategory: "swap", liveOutcomeCount: 0, attestedEventValid: false }) }));
   const body = await response.json();
   assert.equal(response.status, 200);

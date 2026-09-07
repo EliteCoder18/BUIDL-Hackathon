@@ -22,10 +22,18 @@ test('deployment rejects deployer reuse as underwriter and unsafe chain key', as
   env.USC_SEPOLIA_CHAIN_KEY = '1.5';
   assert.throws(() => validateConfig(env), /chain key/);
 });
+
+test('testnet loop defaults to the violation outcome when no CLI flag is present', () => {
+  const source = fs.readFileSync(new URL('../scripts/testnet-loop.mjs', import.meta.url), 'utf8');
+  assert.match(source, /outcomeIndex===-1\?'violation'/);
+});
 test('compiler returns fully linked adapter creation bytecode', async () => {
   assert.ok(fs.existsSync(new URL(modulePath, import.meta.url)), 'deployment compiler module must exist');
   const { compileContracts, linkedBytecode } = await import(modulePath);
   const contracts = compileContracts();
+  assert.ok(contracts['MockDexExecutor.sol'].MockDexExecutor);
+  assert.ok(contracts['UniswapV3Executor.sol'].UniswapV3Executor);
+  assert.ok(contracts['TreasuryJobManager.sol'].TreasuryJobManager.abi.some((item) => item.name === 'setExecutorApproval'));
   const adapter = contracts['AttestcoinOutcomeAdapter.sol'].AttestcoinOutcomeAdapter;
   assert.throws(() => linkedBytecode(adapter), /Missing linked library/);
   const bytecode = linkedBytecode(adapter, { '@gluwa/usc-contracts/contracts/decoding/EvmV1Decoder.sol:EvmV1Decoder': Wallet.createRandom().address });

@@ -71,7 +71,9 @@ export async function createLocalChainRuntime({ sepoliaPort = 8545, creditcoinPo
     const sepoliaUsdc = await deploy(sepoliaDeployer.signer, "MockERC20.sol", "MockERC20", ["Mock USDC", "mUSDC"]);
     const sepoliaWeth = await deploy(sepoliaDeployer.signer, "MockERC20.sol", "MockERC20", ["Mock WETH", "mWETH"]);
     const dex = await deploy(sepoliaDeployer.signer, "MockDEX.sol", "MockDEX", [await sepoliaUsdc.getAddress(), await sepoliaWeth.getAddress()]);
+    const mockDexExecutor = await deploy(sepoliaDeployer.signer, "MockDexExecutor.sol", "MockDexExecutor", [await dex.getAddress()]);
     const jobs = await deploy(sepoliaDeployer.signer, "TreasuryJobManager.sol", "TreasuryJobManager", [await identity.getAddress()]);
+    await wait(jobs.setExecutorApproval(await mockDexExecutor.getAddress(), true));
 
     await wait(identity.mint(sepoliaAgent.address));
     await wait(identity.mint(sepoliaAgentTwo.address));
@@ -111,6 +113,7 @@ export async function createLocalChainRuntime({ sepoliaPort = 8545, creditcoinPo
         mockUsdc: await sepoliaUsdc.getAddress(),
         mockWeth: await sepoliaWeth.getAddress(),
         mockDex: await dex.getAddress(),
+        mockDexExecutor: await mockDexExecutor.getAddress(),
         treasuryJobManager: await jobs.getAddress(),
       },
       creditcoin: {
@@ -139,7 +142,7 @@ export async function createLocalChainRuntime({ sepoliaPort = 8545, creditcoinPo
         lp,
         underwriters: underwriters.map((account, index) => ({ ...account, strategy: ["conservative", "balanced", "aggressive"][index] })),
       },
-      contracts: { identity, sepoliaUsdc, sepoliaWeth, dex, jobs, creditcoinUsdc, vault, registry, outcomeAdapter, policy },
+      contracts: { identity, sepoliaUsdc, sepoliaWeth, dex, mockDexExecutor, jobs, creditcoinUsdc, vault, registry, outcomeAdapter, policy },
       async close() {
         if (closed) return;
         closed = true;

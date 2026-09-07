@@ -12,7 +12,8 @@ const source=new JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
 const target=new JsonRpcProvider(process.env.CREDITCOIN_RPC_URL);
 const client=config.wallet.connect(source), payer=config.wallet.connect(target);
 const file=process.env.TESTNET_LOOP_FILE ?? 'deployments/testnet-loop.json';
-const outcomeArg=process.argv[process.argv.indexOf('--outcome')+1] ?? 'violation';
+const outcomeIndex=process.argv.indexOf('--outcome');
+const outcomeArg=outcomeIndex===-1?'violation':process.argv[outcomeIndex+1];
 if(!['success','violation'].includes(outcomeArg)) throw new Error('--outcome must be success or violation');
 const state=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{deployer:client.address,jobManager:manifest.sepolia.treasuryJobManager,steps:{}};
 if(state.deployer!==client.address || state.jobManager!==manifest.sepolia.treasuryJobManager) throw new Error('Loop checkpoint belongs to another deployment');
@@ -68,7 +69,8 @@ try {
  if(state.jobId===undefined) {
   const deadline=(await source.getBlock('latest')).timestamp+86400;
   const minOut=outcomeArg==='success'?99_000_000n:200_000_000n;
-  const receipt=await send('create-job',client,()=>jobs.createJob.populateTransaction(state.agentId,manifest.sepolia.mockUsdc,manifest.sepolia.mockWeth,manifest.sepolia.mockDex,100_000_000n,minOut,deadline));
+  const executor=manifest.sepolia.mockDexExecutor ?? manifest.sepolia.mockDex;
+  const receipt=await send('create-job',client,()=>jobs.createJob.populateTransaction(state.agentId,manifest.sepolia.mockUsdc,manifest.sepolia.mockWeth,executor,100_000_000n,minOut,deadline));
   const event=receipt.logs.map(l=>{try{return jobs.interface.parseLog(l)}catch{return null}}).find(e=>e?.name==='JobCreated');
   if(!event) throw new Error('Missing JobCreated');state.jobId=event.args.jobId.toString();state.jobKey=await jobs.jobKey(state.jobId);checkpoint();
  }
