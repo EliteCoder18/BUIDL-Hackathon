@@ -82,3 +82,33 @@ See [threat model](docs/threat-model.md) and [three-minute demo script](docs/dem
 5. Request new quotes; show the deterministic risk price rises after the attested failure.
 
 Deployment addresses, explorer links, video, deck, and a real proof transaction should be added to `deployments/testnet.json` and this README after the funded testnet run.
+
+### Reproducible public testnet run
+
+`npm run deploy:preflight` loads the git-ignored `.env`, checks Sepolia (11155111) and CC3 Testnet (102031), funded deployer balances, official identity registry bytecode, the USC Sepolia chain key, and proof-builder availability without sending transactions. `npm run deploy:testnets` reports gas estimates, stores transaction hashes before broadcast in `deployments/testnet-progress.json`, records receipts and constructor arguments, and verifies deployed code and manager roles before writing `deployments/testnet.json`.
+
+Run only one deployment process at a time. To resume an interrupted run, keep the same configuration and rerun the command. If a prepared transaction never reached the RPC or a transaction reverted, inspect its recorded hash and nonce before taking further action; do not delete the checkpoint and blindly redeploy. Keys and authenticated RPC URLs are never written to the manifest.
+
+`npm run smoke:testnets` uses the three separate underwriting keys from `.env`, funds them with testnet CTC and mock USDC, registers an ERC-8004 agent, creates three signed quotes, accepts the balanced quote, and triggers a deliberate source mandate violation. It waits for a real Attestcoin proof, submits it to CC3, settles the policy, checks the coverage payout, and records the higher model premium after failure. The run is checkpointed in `deployments/testnet-loop.json`; final transaction hashes are copied into the authoritative manifest. All amounts and transfers in this workflow are testnet-only.
+
+Public configuration sources: [Creditcoin endpoints](https://docs.creditcoin.org/smart-contract-guides/creditcoin-endpoints), [Gluwa SDK proof service](https://github.com/gluwa/cc-next-query-builder), [ERC-8004 registry deployments](https://github.com/erc-8004/erc-8004-contracts). The live CC3 chain-info precompile identifies Sepolia as chain key 1; preflight verifies that mapping on every run.
+
+After deployment or a completed smoke run, `npm run sync:testnets` copies the manifest to the web app's public `/testnet.json` and updates the local backend `POLICY_MANAGER_ADDRESS`. Start the service backend with `node --env-file=.env services/api/server.mjs` to load these keys and addresses. The interactive embedded demo remains a local simulation; the public manifest and smoke evidence identify actual testnet transactions.
+
+### Confirmed public deployment
+
+The authoritative address and receipt record is [`deployments/testnet.json`](deployments/testnet.json).
+
+| Network | Contract | Explorer |
+| --- | --- | --- |
+| Sepolia | erc8004IdentityRegistry | [0x8004A818BFB912233c491871b3d84c89A494BD9e](https://sepolia.etherscan.io/address/0x8004A818BFB912233c491871b3d84c89A494BD9e) |
+| Sepolia | mockUsdc | [0x815438629fFF40Df72d61FF84C85209085d526a4](https://sepolia.etherscan.io/address/0x815438629fFF40Df72d61FF84C85209085d526a4) |
+| Sepolia | mockWeth | [0xF4d6E442d0Ca875008A89C372a143aAF3D01F3ae](https://sepolia.etherscan.io/address/0xF4d6E442d0Ca875008A89C372a143aAF3D01F3ae) |
+| Sepolia | mockDex | [0x025896e39d7cdE833De022e721266A11e4c1659C](https://sepolia.etherscan.io/address/0x025896e39d7cdE833De022e721266A11e4c1659C) |
+| Sepolia | treasuryJobManager | [0x91eD4049Bab2A6f9f8eA1C9BcbC5316918D3CEB8](https://sepolia.etherscan.io/address/0x91eD4049Bab2A6f9f8eA1C9BcbC5316918D3CEB8) |
+| Creditcoin CC3 | mockUsdc | [0x7e8133cAdD8827B6b80Fb93cca745A4AC148c43d](https://creditcoin-testnet.blockscout.com/address/0x7e8133cAdD8827B6b80Fb93cca745A4AC148c43d) |
+| Creditcoin CC3 | evmV1Decoder | [0x91eD4049Bab2A6f9f8eA1C9BcbC5316918D3CEB8](https://creditcoin-testnet.blockscout.com/address/0x91eD4049Bab2A6f9f8eA1C9BcbC5316918D3CEB8) |
+| Creditcoin CC3 | coverageVault | [0xF4d6E442d0Ca875008A89C372a143aAF3D01F3ae](https://creditcoin-testnet.blockscout.com/address/0xF4d6E442d0Ca875008A89C372a143aAF3D01F3ae) |
+| Creditcoin CC3 | underwriterRegistry | [0x025896e39d7cdE833De022e721266A11e4c1659C](https://creditcoin-testnet.blockscout.com/address/0x025896e39d7cdE833De022e721266A11e4c1659C) |
+| Creditcoin CC3 | attestcoinOutcomeAdapter | [0x42D005c6c66f57Ddb9D178d0BE507b7174F2610A](https://creditcoin-testnet.blockscout.com/address/0x42D005c6c66f57Ddb9D178d0BE507b7174F2610A) |
+| Creditcoin CC3 | policyManager | [0x9E0cfe67A2332cf003615dca6764bEc0184BD302](https://creditcoin-testnet.blockscout.com/address/0x9E0cfe67A2332cf003615dca6764bEc0184BD302) |
