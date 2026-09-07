@@ -11,7 +11,7 @@ const manifest=JSON.parse(fs.readFileSync('deployments/testnet.json','utf8'));
 const source=new JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
 const target=new JsonRpcProvider(process.env.CREDITCOIN_RPC_URL);
 const client=config.wallet.connect(source), payer=config.wallet.connect(target);
-const file='deployments/testnet-loop.json';
+const file=process.env.TESTNET_LOOP_FILE ?? 'deployments/testnet-loop.json';
 const state=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{deployer:client.address,jobManager:manifest.sepolia.treasuryJobManager,steps:{}};
 if(state.deployer!==client.address || state.jobManager!==manifest.sepolia.treasuryJobManager) throw new Error('Loop checkpoint belongs to another deployment');
 const checkpoint=()=>saveJson(file,state);

@@ -1,6 +1,7 @@
 /** Validate and persist proof-confirmed testnet mandate outcomes. */
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 
 export function validateAttestedEvent(event, { now = Math.floor(Date.now() / 1000), maxAgeSeconds = 86_400, ids = new Set() } = {}) {
   if (!event?.eventId || ids.has(event.eventId)) throw new Error("duplicate attested event");
@@ -13,10 +14,27 @@ export function validateAttestedEvent(event, { now = Math.floor(Date.now() / 100
 if (import.meta.url === `file://${process.argv[1]}`) {
   const count = Number(process.argv[process.argv.indexOf("--count") + 1]);
   if (!Number.isInteger(count) || count < 50 || count > 100) throw new Error("--count must be between 50 and 100");
+  const execute = process.argv.includes("--execute");
   const input = process.env.ATTESTED_EVENT_FILE;
-  if (!input || !fs.existsSync(input)) throw new Error("ATTESTED_EVENT_FILE must contain proof-confirmed testnet events");
+  if (execute) {
+    const generated = [];
+    for (let index = 0; index < count; index += 1) {
+      const checkpoint = path.resolve(`deployments/testnet-history-loop-${index}.json`);
+      const run = spawnSync(process.execPath, ["scripts/testnet-loop.mjs"], { stdio: "inherit", env: { ...process.env, TESTNET_LOOP_FILE: checkpoint } });
+      if (run.status !== 0 || !fs.existsSync(checkpoint)) throw new Error(`testnet mandate ${index} did not settle`);
+      const state = JSON.parse(fs.readFileSync(checkpoint, "utf8"));
+      if (state.status !== "complete" || !state.proof?.txBytes || !state.steps?.["settle-policy"]?.hash) throw new Error(`testnet mandate ${index} lacks proof-confirmed settlement`);
+      generated.push(JSON.stringify({ eventId: `testnet-${state.jobKey}`, agentId: state.agentId, outcome: "violation", sourceTxHash: state.steps["execute-job"].hash, settlementTxHash: state.steps["settle-policy"].hash, attestedAt: Math.floor(Date.now() / 1000) }));
+    }
+    const generatedFile = path.resolve("data/attested-testnet-bootstrap.jsonl");
+    fs.mkdirSync(path.dirname(generatedFile), { recursive: true });
+    fs.writeFileSync(generatedFile, `${generated.join("\n")}\n`);
+    process.env.ATTESTED_EVENT_FILE = generatedFile;
+  }
+  const eventFile = execute ? process.env.ATTESTED_EVENT_FILE : input;
+  if (!eventFile || !fs.existsSync(eventFile)) throw new Error("ATTESTED_EVENT_FILE must contain proof-confirmed testnet events");
   const ids = new Set();
-  const events = fs.readFileSync(input, "utf8").trim().split("\n").filter(Boolean).map((line) => {
+  const events = fs.readFileSync(eventFile, "utf8").trim().split("\n").filter(Boolean).map((line) => {
     const event = validateAttestedEvent(JSON.parse(line), { ids }); ids.add(event.eventId); return event;
   });
   if (events.length < count) throw new Error(`expected ${count} attested events, found ${events.length}`);
