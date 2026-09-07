@@ -9,6 +9,10 @@ export function featuresFromHistory(history) {
     amount_vs_p95_bps: history.amountVsP95Bps,
     deadline_tightness_bps: history.deadlineTightnessBps,
     volatility_bps: history.volatilityBps,
+    agent_id: "agent-00",
+    mandate_category: "swap",
+    coverage_size: 100_000,
+    live_outcome_count: total,
   };
 }
 
@@ -27,7 +31,7 @@ function fallback(history) {
     failureProbabilityBps: score.failureProbabilityBps,
     modelVersion: "trustfutures-risk-v1-fixed-seed",
     modelHash: score.modelHash,
-    features: Object.entries(values).map(([name, value]) => ({ name, value, shapValue: shapValues[name] })),
+    features: Object.entries(shapValues).map(([name, shapValue]) => ({ name, value: values[name], shapValue })),
     confidence: 0.7,
     abstain: false,
     trainingData: "deterministic fallback",
