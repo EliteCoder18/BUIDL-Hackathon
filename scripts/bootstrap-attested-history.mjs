@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { JsonRpcProvider } from "ethers";
 
 export function validateAttestedEvent(event, { now = Math.floor(Date.now() / 1000), maxAgeSeconds = 86_400, ids = new Set() } = {}) {
   if (!event?.eventId || ids.has(event.eventId)) throw new Error("duplicate attested event");
@@ -27,6 +28,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       if (run.status !== 0 || !fs.existsSync(checkpoint)) throw new Error(`testnet mandate ${index} did not settle`);
       const state = JSON.parse(fs.readFileSync(checkpoint, "utf8"));
       if (state.status !== "complete" || !state.proof?.txBytes || !state.steps?.["settle-policy"]?.hash) throw new Error(`testnet mandate ${index} lacks proof-confirmed settlement`);
+      const source = new JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
+      const settlement = new JsonRpcProvider(process.env.CREDITCOIN_RPC_URL);
+      try {
+        const [sourceReceipt, settlementReceipt] = await Promise.all([source.getTransactionReceipt(state.steps["execute-job"].hash), settlement.getTransactionReceipt(state.steps["settle-policy"].hash)]);
+        if (!sourceReceipt || sourceReceipt.status !== 1 || !settlementReceipt || settlementReceipt.status !== 1) throw new Error(`testnet mandate ${index} receipt verification failed`);
+      } finally { source.destroy(); settlement.destroy(); }
       generated.push(JSON.stringify(state.attestedEvent));
     }
     const generatedFile = path.resolve("data/attested-testnet-bootstrap.jsonl");
