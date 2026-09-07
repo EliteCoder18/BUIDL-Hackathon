@@ -14,6 +14,7 @@ export interface RiskAnalyticsPanelProps {
   probability?: number;
   modelVersion?: string;
   compact?: boolean;
+  provenance?: { trainingData?: string; calibrationMethod?: string; modelHash?: string; abstentionReasons?: string[] };
 }
 
 export function RiskAnalyticsPanel({
@@ -22,6 +23,7 @@ export function RiskAnalyticsPanel({
   probability,
   modelVersion,
   compact = false,
+  provenance,
 }: RiskAnalyticsPanelProps) {
   const normalised = normaliseRiskFeatures(features);
   const protectiveTerms = typeof explanation.protectiveTerms === "string" ? [explanation.protectiveTerms] : explanation.protectiveTerms;
@@ -47,6 +49,7 @@ export function RiskAnalyticsPanel({
         </ResponsiveContainer>
       </div>
       <p className="risk-analytics__summary">{explanation.summary}</p>
+      {provenance && <p className="risk-analytics__summary"><code>{provenance.trainingData ?? "provenance unavailable"} · {provenance.calibrationMethod ?? "calibration unavailable"} · {provenance.modelHash ?? ""}</code>{provenance.abstentionReasons?.length ? <span role="alert"> Quote withheld: {provenance.abstentionReasons.join(", ")}</span> : null}</p>}
       <pre className="risk-analytics__json"><code>{JSON.stringify({
         topRisks: explanation.topRisks,
         protectiveTerms,

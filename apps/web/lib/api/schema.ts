@@ -46,6 +46,11 @@ export interface ApiRiskProfile {
   abstain: boolean;
   source: string;
   features: ShapFeature[];
+  trainingData?: string;
+  liveFeatures?: string;
+  calibrationMethod?: string;
+  dataLineage?: { datasetVersion: string; datasetHash: string; liveOutcomeCount: number };
+  diagnostics?: { abstentionReasons: string[]; warnings: string[] };
 }
 
 export interface ApiQuote {
@@ -265,6 +270,8 @@ export function parseRiskProfile(value: unknown): ApiRiskProfile {
   const source = record(value, "risk profile");
   if (!Array.isArray(source.features)) throw new TypeError("invalid risk profile features");
   if (typeof source.abstain !== "boolean") throw new TypeError("invalid risk profile abstain");
+  const lineage = source.dataLineage === undefined ? undefined : record(source.dataLineage, "data lineage");
+  const diagnostics = source.diagnostics === undefined ? undefined : record(source.diagnostics, "risk diagnostics");
   return {
     failureProbabilityBps: number(source.failureProbabilityBps, "failureProbabilityBps"),
     modelHash: bytes(source.modelHash, 32, "modelHash"),
@@ -273,6 +280,11 @@ export function parseRiskProfile(value: unknown): ApiRiskProfile {
     abstain: source.abstain,
     source: string(source.source, "risk source"),
     features: source.features.map(parseFeature),
+    trainingData: source.trainingData === undefined ? undefined : string(source.trainingData, "trainingData"),
+    liveFeatures: source.liveFeatures === undefined ? undefined : string(source.liveFeatures, "liveFeatures"),
+    calibrationMethod: source.calibrationMethod === undefined ? undefined : string(source.calibrationMethod, "calibrationMethod"),
+    dataLineage: lineage === undefined ? undefined : { datasetVersion: string(lineage.datasetVersion, "datasetVersion"), datasetHash: string(lineage.datasetHash, "datasetHash"), liveOutcomeCount: number(lineage.liveOutcomeCount, "liveOutcomeCount") },
+    diagnostics: diagnostics === undefined ? undefined : { abstentionReasons: stringArray(diagnostics.abstentionReasons, "abstentionReasons"), warnings: stringArray(diagnostics.warnings, "warnings") },
   };
 }
 
