@@ -12,6 +12,8 @@ const source=new JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
 const target=new JsonRpcProvider(process.env.CREDITCOIN_RPC_URL);
 const client=config.wallet.connect(source), payer=config.wallet.connect(target);
 const file=process.env.TESTNET_LOOP_FILE ?? 'deployments/testnet-loop.json';
+const outcomeArg=process.argv[process.argv.indexOf('--outcome')+1] ?? 'violation';
+if(!['success','violation'].includes(outcomeArg)) throw new Error('--outcome must be success or violation');
 const state=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):{deployer:client.address,jobManager:manifest.sepolia.treasuryJobManager,steps:{}};
 if(state.deployer!==client.address || state.jobManager!==manifest.sepolia.treasuryJobManager) throw new Error('Loop checkpoint belongs to another deployment');
 const checkpoint=()=>saveJson(file,state);
@@ -65,8 +67,8 @@ try {
  await send('approve-job',client,()=>usdc.approve.populateTransaction(jobs.target,100_000_000n));
  if(state.jobId===undefined) {
   const deadline=(await source.getBlock('latest')).timestamp+86400;
-  // The mock DEX returns 1:1; requesting 2:1 deliberately produces a Violation event.
-  const receipt=await send('create-job',client,()=>jobs.createJob.populateTransaction(state.agentId,manifest.sepolia.mockUsdc,manifest.sepolia.mockWeth,manifest.sepolia.mockDex,100_000_000n,200_000_000n,deadline));
+  const minOut=outcomeArg==='success'?99_000_000n:200_000_000n;
+  const receipt=await send('create-job',client,()=>jobs.createJob.populateTransaction(state.agentId,manifest.sepolia.mockUsdc,manifest.sepolia.mockWeth,manifest.sepolia.mockDex,100_000_000n,minOut,deadline));
   const event=receipt.logs.map(l=>{try{return jobs.interface.parseLog(l)}catch{return null}}).find(e=>e?.name==='JobCreated');
   if(!event) throw new Error('Missing JobCreated');state.jobId=event.args.jobId.toString();state.jobKey=await jobs.jobKey(state.jobId);checkpoint();
  }
@@ -84,7 +86,7 @@ try {
  await send('approve-premium',payer,()=>asset.approve.populateTransaction(policy.target,quote.premiumAmount));
  await send('accept-quote',payer,()=>policy.acceptQuote.populateTransaction(quote,quote.signature));
  const outcomeReceipt=await send('execute-job',client,()=>jobs.execute.populateTransaction(state.jobId));
- if((await jobs.jobs(state.jobId)).outcome!==2n) throw new Error('Expected source-chain violation');
+ if((await jobs.jobs(state.jobId)).outcome!==(outcomeArg==='success'?1n:2n)) throw new Error(`Expected source-chain ${outcomeArg}`);
  if(!state.proof) {
   const builder=new proofProvider.service.ProofBuilder(config.chainKey,process.env.PROOF_BUILDER_URL);
   console.log(`Waiting for Attestcoin to attest Sepolia block ${outcomeReceipt.blockNumber}`);
@@ -95,16 +97,16 @@ try {
  }
  const p=state.proof;
  await send('submit-proof',payer,()=>adapter.execute.populateTransaction(0,p.chainKey,p.headerNumber,p.txBytes,p.merkleProof.root,p.merkleProof.siblings,p.continuityProof.lowerEndpointDigest,p.continuityProof.roots));
- if(await adapter.provenOutcome(state.jobKey)!==2n) throw new Error('Proof did not establish violation');
+ if(await adapter.provenOutcome(state.jobKey)!==(outcomeArg==='success'?1n:2n)) throw new Error('Proof did not establish requested outcome');
  if(!state.balanceBeforeSettlement) {state.balanceBeforeSettlement=(await asset.balanceOf(payer.address)).toString();checkpoint();}
  await send('settle-policy',payer,()=>policy.settle.populateTransaction(state.policyId));
- if((await policy.policies(state.policyId)).state!==3n) throw new Error('Policy not settled as failure');
+ if((await policy.policies(state.policyId)).state!==(outcomeArg==='success'?2n:3n)) throw new Error('Policy did not settle as requested outcome');
  const received=await asset.balanceOf(payer.address)-BigInt(state.balanceBeforeSettlement);
- if(received!==500_000_000n) throw new Error('Coverage payout mismatch');
+ if(outcomeArg==='violation' && received!==500_000_000n) throw new Error('Coverage payout mismatch');
  state.payout=received.toString();
  state.nextPremium=priceQuote({...history,violationCount:1},{coverageAmount:500_000_000n,strategy:'balanced'}).premiumAmount.toString();
  if(BigInt(state.nextPremium)<=BigInt(quote.premiumAmount)) throw new Error('Expected premium increase after proven failure');
- state.status='complete';state.completedAt=new Date().toISOString();checkpoint();
+ state.status='complete';state.completedAt=new Date().toISOString();state.attestedEvent={eventId:`testnet-${state.jobKey}`,agentId:state.agentId,mandateCategory:'swap',coverageSize:500000000,deadline:86400,expectedOutput:100000000,actualOutput:outcomeArg==='success'?100000000:90000000,slippageBps:outcomeArg==='success'?0:1000,completionLatencySeconds:0,outcome:outcomeArg,sourceTxHash:state.steps['execute-job'].hash,settlementTxHash:state.steps['settle-policy'].hash,sourceChainId:11155111,settlementChainId:102031,attestedAt:Math.floor(Date.now()/1000),dataSource:'attested-on-chain'};checkpoint();
  manifest.underwriters=Object.fromEntries(state.quotes.map(q=>[q.strategy,q.underwriter]));
  manifest.publicLoop={agentId:state.agentId,jobId:state.jobId,jobKey:state.jobKey,policyId:state.policyId,sourceTransaction:state.steps['execute-job'].hash,proofTransaction:state.steps['submit-proof'].hash,settlementTransaction:state.steps['settle-policy'].hash,payout:state.payout,premiumBefore:quote.premiumAmount,premiumAfter:state.nextPremium,evidence:'deployments/testnet-loop.json'};
  saveJson('deployments/testnet.json',manifest);

@@ -5,9 +5,11 @@ import { spawnSync } from "node:child_process";
 
 export function validateAttestedEvent(event, { now = Math.floor(Date.now() / 1000), maxAgeSeconds = 86_400, ids = new Set() } = {}) {
   if (!event?.eventId || ids.has(event.eventId)) throw new Error("duplicate attested event");
-  if (!event.sourceTxHash || !event.settlementTxHash) throw new Error("attested event requires transaction references");
-  if (!Number.isInteger(event.attestedAt) || now - event.attestedAt > maxAgeSeconds) throw new Error("stale attested event");
+  if (!/^0x[0-9a-f]{64}$/i.test(event.sourceTxHash ?? "") || !/^0x[0-9a-f]{64}$/i.test(event.settlementTxHash ?? "")) throw new Error("attested event requires transaction references");
+  if (!Number.isInteger(event.attestedAt) || event.attestedAt > now || now - event.attestedAt > maxAgeSeconds) throw new Error("stale attested event");
   if (!/^(success|violation|expired)$/.test(event.outcome)) throw new Error("invalid attested outcome");
+  for (const key of ["agentId", "mandateCategory", "coverageSize", "deadline", "expectedOutput", "actualOutput", "slippageBps", "completionLatencySeconds", "sourceChainId", "settlementChainId"]) if (event[key] === undefined) throw new Error(`missing ${key}`);
+  if (event.sourceChainId !== 11155111 || event.settlementChainId !== 102031) throw new Error("invalid chain IDs");
   return { ...event, dataSource: "attested-on-chain" };
 }
 
@@ -20,11 +22,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const generated = [];
     for (let index = 0; index < count; index += 1) {
       const checkpoint = path.resolve(`deployments/testnet-history-loop-${index}.json`);
-      const run = spawnSync(process.execPath, ["scripts/testnet-loop.mjs"], { stdio: "inherit", env: { ...process.env, TESTNET_LOOP_FILE: checkpoint } });
+      const outcome = index % 2 === 0 ? "success" : "violation";
+      const run = spawnSync(process.execPath, ["scripts/testnet-loop.mjs", "--outcome", outcome], { stdio: "inherit", env: { ...process.env, TESTNET_LOOP_FILE: checkpoint } });
       if (run.status !== 0 || !fs.existsSync(checkpoint)) throw new Error(`testnet mandate ${index} did not settle`);
       const state = JSON.parse(fs.readFileSync(checkpoint, "utf8"));
       if (state.status !== "complete" || !state.proof?.txBytes || !state.steps?.["settle-policy"]?.hash) throw new Error(`testnet mandate ${index} lacks proof-confirmed settlement`);
-      generated.push(JSON.stringify({ eventId: `testnet-${state.jobKey}`, agentId: state.agentId, outcome: "violation", sourceTxHash: state.steps["execute-job"].hash, settlementTxHash: state.steps["settle-policy"].hash, attestedAt: Math.floor(Date.now() / 1000) }));
+      generated.push(JSON.stringify(state.attestedEvent));
     }
     const generatedFile = path.resolve("data/attested-testnet-bootstrap.jsonl");
     fs.mkdirSync(path.dirname(generatedFile), { recursive: true });
