@@ -1,3 +1,5 @@
+import { MandateEventLedger } from "./mandate-event-ledger.mjs";
+
 const seededHistory = (overrides = {}) => ({
   successCount: 9,
   violationCount: 0,
@@ -16,6 +18,7 @@ export class DemoStore {
   }
 
   reset() {
+    this.ledger = new MandateEventLedger();
     this.agents = new Map([
       ["0", { agentId: "0", name: "Treasury Delta", history: seededHistory() }],
       ["1", { agentId: "1", name: "Liquidity Sigma", history: seededHistory({ successCount: 8, violationCount: 1, meanSlippageBps: 39 }) }],
@@ -53,12 +56,19 @@ export class DemoStore {
     return history;
   }
 
+  recordAttestedOutcome(event) {
+    const record = this.ledger.append(event);
+    this.recordOutcome(record.agentId, record.outcome);
+    return record;
+  }
+
   snapshot() {
     return {
       agents: [...this.agents.values()],
       jobs: [...this.jobs.values()],
       policies: [...this.policies.values()],
       proofs: [...this.proofs.values()],
+      attestedMandates: this.ledger.events,
     };
   }
 }

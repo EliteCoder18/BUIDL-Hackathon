@@ -15,7 +15,8 @@
     "lint": "node --check services/domain/policy.mjs",
     "deploy:preflight": "node scripts/deploy.mjs --preflight",
     "smoke:testnets": "node scripts/testnet-loop.mjs",
-    "sync:testnets": "node scripts/sync-testnet-manifest.mjs"
+    "sync:testnets": "node scripts/sync-testnet-manifest.mjs",
+    "bootstrap:attested-history": "node scripts/bootstrap-attested-history.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

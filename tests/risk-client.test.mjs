@@ -46,4 +46,7 @@ test("risk client returns labeled deterministic feature attribution during an ou
   assert.ok(result.features.every((feature) => Number.isFinite(feature.shapValue)));
   assert.ok(result.failureProbabilityBps >= 100 && result.failureProbabilityBps <= 9_500);
   assert.equal(result.abstain, false);
+  assert.equal(result.trainingData, "deterministic fallback");
+  assert.equal(result.calibrationMethod, "not-applied-service-unavailable");
+  assert.equal(result.dataLineage.liveOutcomeCount, 0);
 });

@@ -50,3 +50,19 @@ def test_strong_attested_history_is_not_near_certain_failure():
         "volatility_bps": 300,
     })
     assert result["failureProbabilityBps"] < 3_000
+
+
+def test_score_discloses_data_lineage_and_abstains_for_unseen_category():
+    result = score_risk({
+        **STRONG_FEATURES,
+        "agent_id": "agent-00",
+        "mandate_category": "unseen-category",
+        "coverage_size": 100_000,
+        "live_outcome_count": 4,
+    })
+
+    assert result["trainingData"] == "fixed-seed synthetic"
+    assert result["calibrationMethod"]
+    assert result["dataLineage"]["datasetHash"].startswith("sha256:")
+    assert result["abstain"] is True
+    assert "unseen-mandate-category" in result["diagnostics"]["abstentionReasons"]

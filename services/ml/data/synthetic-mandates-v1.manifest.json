@@ -1,0 +1,8 @@
+{
+  "datasetVersion": "synthetic-mandates-v1",
+  "generationCommand": "python data/generate_dataset.py",
+  "generationVersion": "synthetic-mandates-generator-v1",
+  "rowCount": 480,
+  "seed": 8004,
+  "sha256": "f76b82eef755db69fa31b8fdf1b8d832e1078babf33928898944d1e4c8347ddb"
+}

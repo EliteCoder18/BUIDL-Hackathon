@@ -30,9 +30,16 @@ function fallback(history) {
     features: Object.entries(values).map(([name, value]) => ({ name, value, shapValue: shapValues[name] })),
     confidence: 0.7,
     abstain: false,
+    trainingData: "deterministic fallback",
+    liveFeatures: "attested history aggregate",
+    calibrationMethod: "not-applied-service-unavailable",
+    probabilityBoundsBps: { min: 100, max: 9_500 },
+    dataLineage: { datasetVersion: "fallback-v1", datasetHash: `sha256:${score.modelHash.slice(2)}`, liveOutcomeCount: 0 },
+    diagnostics: { confidence: 0.7, featureDrift: null, outOfDistribution: false, abstentionReasons: [], warnings: ["risk-service-unavailable"] },
     source: "deterministic-fallback",
   };
 }
+
 
 function validServiceResult(value) {
   return value && Number.isInteger(value.failureProbabilityBps)

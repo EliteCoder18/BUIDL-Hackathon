@@ -223,7 +223,14 @@ export function createDemoSaga(runtime, {
       policy.seniorLoss = success ? 0n : policy.seniorAmount;
       policy.underwriterPremium = success ? policy.premiumAmount * 3n / 10n : 0n;
       policy.lpPremium = success ? policy.premiumAmount - policy.underwriterPremium : 0n;
-      store.recordOutcome(policy.agentId, proof.outcome);
+      store.recordAttestedOutcome({
+        eventId: proof.id,
+        agentId: policy.agentId,
+        outcome: proof.outcome,
+        sourceTxHash: proof.sourceTxHash,
+        settlementTxHash: tx.hash,
+        attestedAt: Number((await runtime.creditcoin.provider.getBlock(receipt.blockNumber)).timestamp),
+      });
       return {
         data: policy,
         events: [{ type: "PROOF_SETTLED", outcome: success ? "success" : "slashed", proofId: proof.id }],

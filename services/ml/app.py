@@ -16,6 +16,11 @@ class Features(BaseModel):
     amount_vs_p95_bps: float = Field(ge=0, le=100000)
     deadline_tightness_bps: float = Field(ge=0, le=10000)
     volatility_bps: float = Field(ge=0, le=10000)
+    agent_id: str = "agent-00"
+    mandate_category: str = "swap"
+    coverage_size: float = Field(default=100_000, ge=0)
+    live_outcome_count: int = Field(default=0, ge=0)
+    attested_event_valid: bool = True
 
 @app.post("/v1/risk")
 def risk(features: Features):
