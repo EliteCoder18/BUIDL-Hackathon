@@ -17,9 +17,9 @@ export function featuresFromHistory(history, context = {}) {
   };
 }
 
-function fallback(history) {
+function fallback(history, context = {}) {
   const score = priceQuote(history, { coverageAmount: 100_000_000n, strategy: "balanced" });
-  const values = featuresFromHistory(history);
+  const values = featuresFromHistory(history, context);
   const shapValues = {
     failure_rate: values.failure_rate * 6,
     mean_slippage_bps: values.mean_slippage_bps * 0.0012,
@@ -36,10 +36,10 @@ function fallback(history) {
     confidence: 0.7,
     abstain: false,
     trainingData: "deterministic fallback",
-    liveFeatures: "attested history aggregate",
+    liveFeatures: context.attestedEventValid && context.liveOutcomeCount > 0 ? "attested on-chain outcomes" : "no attested outcomes available",
     calibrationMethod: "not-applied-service-unavailable",
     probabilityBoundsBps: { min: 100, max: 9_500 },
-    dataLineage: { datasetVersion: "fallback-v1", datasetHash: `sha256:${score.modelHash.slice(2)}`, liveOutcomeCount: 0 },
+    dataLineage: { datasetVersion: "fallback-v1", datasetHash: `sha256:${score.modelHash.slice(2)}`, liveOutcomeCount: context.attestedEventValid ? context.liveOutcomeCount ?? 0 : 0 },
     diagnostics: { confidence: 0.7, featureDrift: null, outOfDistribution: false, abstentionReasons: [], warnings: ["risk-service-unavailable"] },
     source: "deterministic-fallback",
   };
@@ -77,7 +77,7 @@ export function createRiskClient({ baseUrl = "http://127.0.0.1:8000", fetchImpl 
         if (!validServiceResult(result)) throw new Error("invalid risk service response");
         return { ...result, source: "shap-service" };
       } catch {
-        return fallback(history);
+        return fallback(history, context);
       }
     },
   };

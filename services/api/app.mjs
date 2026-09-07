@@ -19,11 +19,11 @@ export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quo
           if (routed) return routed;
         }
         if (request.method === "POST" && url.pathname === "/v1/quotes") {
-          const { jobKey, coverageAmount, history } = await request.json();
-          if (!jobKey || !history) return json({ error: "jobKey and attested history are required" }, 400);
+          const { jobKey, coverageAmount, history, agentId, mandateCategory, liveOutcomeCount, attestedEventValid } = await request.json();
+          if (!jobKey || !history || !agentId || !mandateCategory || !Number.isInteger(liveOutcomeCount) || typeof attestedEventValid !== "boolean") return json({ error: "jobKey, history, agentId, mandateCategory, liveOutcomeCount, and attestedEventValid are required" }, 400);
           const coverage = BigInt(coverageAmount);
           if (coverage > 1_000_000_000n) return json({ error: "maximum MVP coverage is 1,000 mUSDC" }, 400);
-          const risk = await riskClient.score(history, { coverageSize: Number(coverage) });
+          const risk = await riskClient.score(history, { agentId, mandateCategory, coverageSize: Number(coverage), liveOutcomeCount, attestedEventValid });
           if (risk.abstain) return json({ error: "risk model abstained", diagnostics: risk.diagnostics }, 422);
           const rawQuotes = ["conservative", "balanced", "aggressive"].map((strategy, nonce) => {
             const quote = priceQuote(history, { coverageAmount: coverage, strategy });

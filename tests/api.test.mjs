@@ -7,7 +7,7 @@ const history = { successCount: 8, violationCount: 1, expiryCount: 1, meanSlippa
 
 test("quote endpoint returns three bounded underwriting choices", async () => {
   const api = createApi();
-  const response = await api.handle(new Request("http://local/v1/quotes", { method: "POST", body: JSON.stringify({ jobKey: "0xjob", coverageAmount: "100000000", history }) }));
+  const response = await api.handle(new Request("http://local/v1/quotes", { method: "POST", body: JSON.stringify({ jobKey: "0xjob", coverageAmount: "100000000", history, agentId: "agent-00", mandateCategory: "swap", liveOutcomeCount: 0, attestedEventValid: false }) }));
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.quotes.length, 3);
@@ -16,7 +16,7 @@ test("quote endpoint returns three bounded underwriting choices", async () => {
 
 test("quote endpoint uses the supplied risk service result", async () => {
   const api = createApi({ riskClient: { score: async () => ({ failureProbabilityBps: 1200, modelHash: `0x${"ab".repeat(32)}`, abstain: false }) } });
-  const response = await api.handle(new Request("http://local/v1/quotes", { method: "POST", body: JSON.stringify({ jobKey: "0xjob", coverageAmount: "100000000", history }) }));
+  const response = await api.handle(new Request("http://local/v1/quotes", { method: "POST", body: JSON.stringify({ jobKey: "0xjob", coverageAmount: "100000000", history, agentId: "agent-00", mandateCategory: "swap", liveOutcomeCount: 0, attestedEventValid: false }) }));
   const body = await response.json();
   assert.equal(body.quotes[1].failureProbabilityBps, 1200);
   assert.equal(body.quotes[1].modelHash, `0x${"ab".repeat(32)}`);
@@ -44,7 +44,7 @@ test("configured bots return EIP-712 signed quotes without changing model values
     privateKeys: { conservative: `0x${"11".repeat(32)}`, balanced: `0x${"22".repeat(32)}`, aggressive: `0x${"33".repeat(32)}` },
   });
   const api = createApi({ quoteSigner: signer });
-  const response = await api.handle(new Request("http://local/v1/quotes", { method: "POST", body: JSON.stringify({ jobKey: `0x${"44".repeat(32)}`, coverageAmount: "100000000", history }) }));
+  const response = await api.handle(new Request("http://local/v1/quotes", { method: "POST", body: JSON.stringify({ jobKey: `0x${"44".repeat(32)}`, coverageAmount: "100000000", history, agentId: "agent-00", mandateCategory: "swap", liveOutcomeCount: 0, attestedEventValid: false }) }));
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.match(body.quotes[0].signature, /^0x[0-9a-f]{130}$/);
