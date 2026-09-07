@@ -22,6 +22,11 @@ test("risk client preserves calibrated SHAP service output", async () => {
     features: [{ name: "failure_rate", value: 0.1, shapValue: -0.42 }],
     confidence: 0.91,
     abstain: false,
+    trainingData: "fixed-seed synthetic",
+    liveFeatures: "no attested outcomes available",
+    calibrationMethod: "isotonic",
+    dataLineage: { datasetVersion: "synthetic-mandates-v1", datasetHash: "sha256:test", liveOutcomeCount: 0 },
+    diagnostics: { confidence: 0.91, featureDrift: 0.1, outOfDistribution: false, abstentionReasons: [], warnings: [] },
   };
   const client = createRiskClient({
     baseUrl: "http://risk",

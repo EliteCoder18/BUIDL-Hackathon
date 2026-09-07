@@ -51,7 +51,16 @@ function validServiceResult(value) {
     && value.failureProbabilityBps >= 100 && value.failureProbabilityBps <= 9_500
     && typeof value.modelHash === "string"
     && Array.isArray(value.features)
-    && typeof value.abstain === "boolean";
+    && typeof value.abstain === "boolean"
+    && typeof value.trainingData === "string"
+    && typeof value.liveFeatures === "string"
+    && typeof value.calibrationMethod === "string"
+    && value.dataLineage && Number.isInteger(value.dataLineage.liveOutcomeCount)
+    && value.diagnostics && Number.isFinite(value.diagnostics.confidence)
+    && Number.isFinite(value.diagnostics.featureDrift)
+    && typeof value.diagnostics.outOfDistribution === "boolean"
+    && Array.isArray(value.diagnostics.abstentionReasons)
+    && Array.isArray(value.diagnostics.warnings);
 }
 
 export function createRiskClient({ baseUrl = "http://127.0.0.1:8000", fetchImpl = fetch } = {}) {

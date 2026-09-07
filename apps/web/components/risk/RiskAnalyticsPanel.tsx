@@ -14,7 +14,7 @@ export interface RiskAnalyticsPanelProps {
   probability?: number;
   modelVersion?: string;
   compact?: boolean;
-  provenance?: { trainingData?: string; calibrationMethod?: string; modelHash?: string; abstentionReasons?: string[] };
+  provenance?: { trainingData?: string; calibrationMethod?: string; modelHash?: string; abstentionReasons?: string[]; liveOutcomeCount?: number; confidence?: number; featureDrift?: number; outOfDistribution?: boolean };
 }
 
 export function RiskAnalyticsPanel({
@@ -49,7 +49,7 @@ export function RiskAnalyticsPanel({
         </ResponsiveContainer>
       </div>
       <p className="risk-analytics__summary">{explanation.summary}</p>
-      {provenance && <p className="risk-analytics__summary"><code>{provenance.trainingData ?? "provenance unavailable"} · {provenance.calibrationMethod ?? "calibration unavailable"} · {provenance.modelHash ?? ""}</code>{provenance.abstentionReasons?.length ? <span role="alert"> Quote withheld: {provenance.abstentionReasons.join(", ")}</span> : null}</p>}
+      {provenance && <p className="risk-analytics__summary"><code>{provenance.trainingData ?? "provenance unavailable"} · {provenance.calibrationMethod ?? "calibration unavailable"} · live outcomes {provenance.liveOutcomeCount ?? 0} · confidence {provenance.confidence == null ? "—" : `${(provenance.confidence * 100).toFixed(0)}%`} · drift {provenance.featureDrift ?? "—"} · OOD {String(provenance.outOfDistribution ?? false)} · {provenance.modelHash ?? ""}</code>{provenance.abstentionReasons?.length ? <span role="alert"> Quote withheld: {provenance.abstentionReasons.join(", ")}</span> : null}</p>}
       <pre className="risk-analytics__json"><code>{JSON.stringify({
         topRisks: explanation.topRisks,
         protectiveTerms,
