@@ -20,8 +20,8 @@ export class DemoStore {
   reset() {
     this.ledger = new MandateEventLedger();
     this.agents = new Map([
-      ["0", { agentId: "0", name: "Treasury Delta", history: seededHistory() }],
-      ["1", { agentId: "1", name: "Liquidity Sigma", history: seededHistory({ successCount: 8, violationCount: 1, meanSlippageBps: 39 }) }],
+      ["0", { agentId: "0", name: "Treasury Delta", history: seededHistory(), baselineHistory: seededHistory() }],
+      ["1", { agentId: "1", name: "Liquidity Sigma", history: seededHistory({ successCount: 8, violationCount: 1, meanSlippageBps: 39 }), baselineHistory: seededHistory({ successCount: 8, violationCount: 1, meanSlippageBps: 39 }) }],
     ]);
     this.jobs = new Map();
     this.quotes = new Map();
@@ -61,6 +61,8 @@ export class DemoStore {
     this.recordOutcome(record.agentId, record.outcome);
     return record;
   }
+
+  liveOutcomeCount(agentId) { return this.ledger.events.filter((event) => event.agentId === String(agentId)).length; }
 
   snapshot() {
     return {

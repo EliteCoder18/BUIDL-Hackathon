@@ -6,7 +6,7 @@ STRONG_FEATURES = {
     "mean_slippage_bps": 18.0,
     "mean_lateness_bps": 35.0,
     "amount_vs_p95_bps": 9_200.0,
-    "deadline_tightness_bps": 240.0,
+    "deadline_tightness_bps": 20.0,
     "volatility_bps": 280.0,
 }
 

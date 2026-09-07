@@ -34,7 +34,7 @@ export function createDemoSaga(runtime, {
 
   async function buildQuotes(agentId, coverageAmount, jobKey) {
     const agent = store.requireAgent(agentId);
-    const riskProfile = await riskClient.score(agent.history);
+    const riskProfile = await riskClient.score(agent.history, { agentId: `agent-${String(agentId).padStart(2, "0")}`, mandateCategory: "swap", coverageSize: Number(coverageAmount), liveOutcomeCount: store.liveOutcomeCount(agentId), attestedEventValid: store.liveOutcomeCount(agentId) > 0 });
     if (riskProfile.abstain) return {};
     const latestBlock = await runtime.creditcoin.provider.getBlock("latest");
     const validUntil = BigInt(latestBlock.timestamp + 600);
@@ -241,7 +241,7 @@ export function createDemoSaga(runtime, {
     getState() { return store.snapshot(); },
     reset() { return store.reset(); },
     getAgents() { return [...store.agents.values()]; },
-    async getRisk(agentId) { return riskClient.score(store.requireAgent(agentId).history); },
+    async getRisk(agentId) { const count = store.liveOutcomeCount(agentId); return riskClient.score(store.requireAgent(agentId).history, { agentId: `agent-${String(agentId).padStart(2, "0")}`, mandateCategory: "swap", coverageSize: 100_000, liveOutcomeCount: count, attestedEventValid: count > 0 }); },
     getJob(jobKey) { return store.requireJob(jobKey); },
     getQuotes(jobKey) { return store.quotes.get(jobKey) ?? []; },
     getPolicy(policyId) { return store.requirePolicy(policyId); },

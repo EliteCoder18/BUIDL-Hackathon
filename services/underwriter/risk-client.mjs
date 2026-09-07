@@ -12,7 +12,8 @@ export function featuresFromHistory(history, context = {}) {
     agent_id: context.agentId ?? "agent-00",
     mandate_category: context.mandateCategory ?? "swap",
     coverage_size: context.coverageSize ?? 100_000,
-    live_outcome_count: total,
+    live_outcome_count: context.liveOutcomeCount ?? 0,
+    attested_event_valid: context.attestedEventValid ?? false,
   };
 }
 
