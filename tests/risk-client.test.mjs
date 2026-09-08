@@ -55,3 +55,20 @@ test("risk client returns labeled deterministic feature attribution during an ou
   assert.equal(result.calibrationMethod, "not-applied-service-unavailable");
   assert.equal(result.dataLineage.liveOutcomeCount, 0);
 });
+
+test("risk client sends scoring requests to the configured cloud endpoint", async () => {
+  const previous = process.env.RISK_SERVICE_URL;
+  process.env.RISK_SERVICE_URL = "https://risk.example.test";
+  try {
+    let requestedUrl;
+    const client = createRiskClient({ fetchImpl: async (url) => {
+      requestedUrl = url;
+      return new Response("offline", { status: 503 });
+    } });
+    await client.score(history);
+    assert.equal(requestedUrl, "https://risk.example.test/v1/risk");
+  } finally {
+    if (previous === undefined) delete process.env.RISK_SERVICE_URL;
+    else process.env.RISK_SERVICE_URL = previous;
+  }
+});

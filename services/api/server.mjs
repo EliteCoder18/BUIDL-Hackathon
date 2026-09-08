@@ -21,21 +21,31 @@ const server = createServer(async (req, res) => {
     res.end();
     return;
   }
-  const body = await new Promise((resolve, reject) => {
-    let data = "";
-    req.on("data", (chunk) => {
-      data += chunk;
-      if (Buffer.byteLength(data) > 1_000_000) reject(new Error("request body too large"));
-    });
-    req.on("end", () => resolve(data));
-  });
   try {
+    const body = await new Promise((resolve, reject) => {
+      const chunks = [];
+      let size = 0;
+      req.on("data", (chunk) => {
+        size += chunk.length;
+        if (size > 1_000_000) {
+          chunks.length = 0;
+          reject(Object.assign(new Error("request body too large"), { status: 413 }));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+      req.on("error", reject);
+      req.on("aborted", () => reject(new Error("request aborted")));
+    });
     const response = await api.handle(new Request(`http://localhost${req.url}`, { method: req.method, body: ["GET", "HEAD"].includes(req.method) ? undefined : body }));
     res.writeHead(response.status, { ...cors, ...Object.fromEntries(response.headers) });
     res.end(await response.text());
   } catch (error) {
-    res.writeHead(413, { ...cors, "content-type": "application/json" });
-    res.end(JSON.stringify({ error: error instanceof Error ? error.message : "request failed" }));
+    if (res.destroyed) return;
+    const status = error?.status === 413 ? 413 : 500;
+    res.writeHead(status, { ...cors, "content-type": "application/json" });
+    res.end(JSON.stringify({ error: status === 413 ? "request body too large" : "request failed" }));
   }
 });
 

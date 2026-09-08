@@ -63,7 +63,7 @@ function validServiceResult(value) {
     && Array.isArray(value.diagnostics.warnings);
 }
 
-export function createRiskClient({ baseUrl = "http://127.0.0.1:8000", fetchImpl = fetch } = {}) {
+export function createRiskClient({ baseUrl = process.env.RISK_SERVICE_URL ?? "http://127.0.0.1:8000", fetchImpl = fetch } = {}) {
   return {
     async score(history, context = {}) {
       try {

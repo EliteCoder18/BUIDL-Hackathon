@@ -22,5 +22,18 @@ jobs:
         with: { node-version: 22, cache: npm, cache-dependency-path: apps/web/package-lock.json }
       - run: npm ci
         working-directory: apps/web
+      - run: npm test
+        working-directory: apps/web
       - run: npm run build
         working-directory: apps/web
+  risk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: services/ml/requirements.txt
+      - run: pip install -r services/ml/requirements.txt pytest httpx
+      - run: python -m pytest services/ml
