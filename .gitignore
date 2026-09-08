@@ -5,5 +5,7 @@ apps/web/.next/
 .env.local
 coverage/
 output/
+.playwright-cli/
+*.tsbuildinfo
 __pycache__/
 .venv/

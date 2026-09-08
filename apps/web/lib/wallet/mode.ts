@@ -1,13 +1,10 @@
 export type WalletMode =
-  | { kind: "embedded"; label: "Embedded demo account" }
-  | { kind: "external"; label: "External wallet"; projectId: string };
+  | { kind: "embedded"; label: "Embedded demo" }
+  | { kind: "public"; label: "Public testnet" };
 
-const PLACEHOLDER_IDS = new Set(["trustfutures-testnet", "your-project-id", ""]);
-
-export function resolveWalletMode(projectId: string | undefined): WalletMode {
-  const normalized = projectId?.trim() ?? "";
-  if (normalized.length < 20 || PLACEHOLDER_IDS.has(normalized.toLowerCase())) {
-    return { kind: "embedded", label: "Embedded demo account" };
+export function resolveWalletMode(embeddedDemo: string | undefined): WalletMode {
+  if (["1", "true", "yes"].includes(embeddedDemo?.trim().toLowerCase() ?? "")) {
+    return { kind: "embedded", label: "Embedded demo" };
   }
-  return { kind: "external", label: "External wallet", projectId: normalized };
+  return { kind: "public", label: "Public testnet" };
 }

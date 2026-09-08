@@ -2,14 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { LossWaterfall } from "../../components/policy/LossWaterfall";
+import { PublicCapitalDesk } from "../../components/transactions/PublicCapitalDesk";
 import { MetricReadout } from "../../components/ui/MetricReadout";
 import { StatusChip } from "../../components/ui/StatusChip";
 import { TechnicalPanel } from "../../components/ui/TechnicalPanel";
 import type { VaultResource } from "../../lib/api";
 import { useTrustFuturesApi } from "../../lib/orchestration";
+import { resolveWalletMode } from "../../lib/wallet/mode";
 
 const units = (value?: string) => value ? Number(value) / 1e6 : 0;
 export default function VaultPage() {
+  const mode = resolveWalletMode(process.env.NEXT_PUBLIC_EMBEDDED_DEMO);
+  return mode.kind === "public" ? <PublicVaultPage /> : <EmbeddedVaultPage />;
+}
+
+function PublicVaultPage() {
+  return <div className="route-stack"><header className="route-heading"><div><p className="kicker">CREDITCOIN CC3 / PUBLIC CAPITAL TERMINAL</p><h1>Capital that answers for agents</h1><p>Mint test mUSDC, supply the senior vault, or post junior first-loss stake directly from MetaMask.</p></div><StatusChip label="20 / 80 WATERFALL" tone="cyan" pulse /></header><PublicCapitalDesk /><TechnicalPanel eyebrow="LOSS ORDER" title="Junior stake is consumed before LP capital"><LossWaterfall coverage={1_000} state="CREDITCOIN_POLICY_LOCKED" /></TechnicalPanel></div>;
+}
+
+function EmbeddedVaultPage() {
   const api = useTrustFuturesApi();
   const [vault, setVault] = useState<VaultResource>();
   const [error, setError] = useState("");

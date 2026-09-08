@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CrossChainTopology } from "../components/cross-chain/CrossChainTopology";
+import { PublicEvidence } from "../components/deployments/PublicEvidence";
 import { NetworkTelemetry } from "../components/dashboard/NetworkTelemetry";
 import { SagaRail } from "../components/dashboard/SagaRail";
 import { MetricReadout } from "../components/ui/MetricReadout";
@@ -10,12 +11,28 @@ import { StatusChip } from "../components/ui/StatusChip";
 import { TechnicalPanel } from "../components/ui/TechnicalPanel";
 import type { DemoStateResource, VaultResource } from "../lib/api";
 import { useCrossChainOrchestrator } from "../lib/orchestration";
+import { resolveWalletMode } from "../lib/wallet/mode";
 
 function units(value?: string) {
   return value ? (Number(value) / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—";
 }
 
 export default function OperationsPage() {
+  const mode = resolveWalletMode(process.env.NEXT_PUBLIC_EMBEDDED_DEMO);
+  return mode.kind === "public" ? <PublicOperationsPage /> : <EmbeddedOperationsPage />;
+}
+
+function PublicOperationsPage() {
+  const { state } = useCrossChainOrchestrator();
+  return <div className="route-stack observatory-route">
+    <header className="route-heading observatory-heading"><div><p className="kicker"><span>00</span> PUBLIC TESTNET / LIVE MARKET</p><h1>Trust becomes<br /><em>priced capital.</em></h1><p>Connect MetaMask to create Sepolia mandates, stake CC3 liquidity, sign failure-risk quotes, and verify the real Attestcoin payout loop.</p></div><div className="route-actions"><StatusChip label="PUBLIC TESTNET LIVE" tone="success" pulse /><Link className="technical-button technical-button--primary launch-control" href="/jobs/new"><span>Create public mandate</span><i>↗</i><small>START ON SEPOLIA</small></Link></div></header>
+    <section className="observatory-stage observatory-stage--public" aria-label="Public cross-chain topology"><div className="observatory-stage__coordinate observatory-stage__coordinate--left">SEPOLIA → ATTESTCOIN → CC3</div><div className="observatory-stage__coordinate observatory-stage__coordinate--right">CHAIN IDS 11155111 / 102031</div><CrossChainTopology state={state} /><div className="state-lens"><span>WALLET ORCHESTRATOR</span><strong>{state.replaceAll("_", " ")}</strong><code>RECEIPT-DRIVEN / NON-CUSTODIAL</code></div><div className="public-stage-actions"><Link href="/jobs/new"><small>CLIENT</small><strong>CREATE MANDATE</strong><span>↗</span></Link><Link href="/vault"><small>LIQUIDITY PROVIDER</small><strong>DEPOSIT SENIOR</strong><span>↗</span></Link><Link href="/underwrite"><small>UNDERWRITER</small><strong>STAKE + QUOTE</strong><span>↗</span></Link></div></section>
+    <div className="simulation-disclosure"><strong>SAFE PUBLIC LAB</strong><p>Only testnet contracts and freely mintable mock assets are enabled. Wallet signatures are user initiated; this prototype is a performance bond, not production insurance.</p></div>
+    <PublicEvidence />
+  </div>;
+}
+
+function EmbeddedOperationsPage() {
   const { api, state } = useCrossChainOrchestrator();
   const [snapshot, setSnapshot] = useState<DemoStateResource>();
   const [vault, setVault] = useState<VaultResource>();

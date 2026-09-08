@@ -5,9 +5,30 @@ import { RiskAnalyticsPanel } from "../../components/risk/RiskAnalyticsPanel";
 import { StatusChip } from "../../components/ui/StatusChip";
 import { TechnicalPanel } from "../../components/ui/TechnicalPanel";
 import type { AgentResource, AgentRiskResource } from "../../lib/api";
+import { loadDeploymentManifest, type TestnetDeploymentManifest } from "../../lib/contracts/deployments";
 import { useTrustFuturesApi } from "../../lib/orchestration";
+import { resolveWalletMode } from "../../lib/wallet/mode";
 
 export default function AgentsPage() {
+  const mode = resolveWalletMode(process.env.NEXT_PUBLIC_EMBEDDED_DEMO);
+  return mode.kind === "public" ? <PublicAgentsPage /> : <EmbeddedAgentsPage />;
+}
+
+function PublicAgentsPage() {
+  const [deployment, setDeployment] = useState<TestnetDeploymentManifest>();
+  const [error, setError] = useState("");
+  useEffect(() => { loadDeploymentManifest().then(setDeployment).catch((cause) => setError(cause instanceof Error ? cause.message : "Deployment unavailable")); }, []);
+  const loop = deployment?.publicLoop;
+  const before = Number(loop?.premiumBefore ?? 0) / 1e6;
+  const after = Number(loop?.premiumAfter ?? 0) / 1e6;
+  return <div className="route-stack">
+    <header className="route-heading"><div><p className="kicker">ERC-8004 / PUBLIC RELIABILITY EVIDENCE</p><h1>Agents carry economic memory</h1><p>The public failure loop binds an official Sepolia identity to an objective outcome, then reprices the next Creditcoin bond.</p></div><StatusChip label="ATTESTED ON-CHAIN" tone="success" pulse /></header>
+    {error && <div className="error-banner" role="alert">{error}</div>}
+    {loop && <div className="agent-matrix"><TechnicalPanel eyebrow={`ERC-8004 / AGENT ${loop.agentId ?? "UNAVAILABLE"}`} title="Recorded testnet outcome"><p>This deployment manifest records an attested failure. It is historical evidence, not a live risk prediction.</p><p>Recorded payout: {loop.payout ? Number(loop.payout) / 1e6 : "Unavailable"} mUSDC.</p><p>Recorded premium: {loop.premiumBefore ? before : "Unavailable"} → {loop.premiumAfter ? after : "Unavailable"} mUSDC.</p><p>Live SHAP attributions and calibrated failure probability are unavailable on this public frontend. Model training uses synthetic data; premiums are not probabilities.</p><a className="text-link" href={`${deployment!.creditcoin.explorer}/tx/${loop.settlementTransaction}`} target="_blank" rel="noreferrer">VIEW SETTLEMENT RECEIPT ↗</a></TechnicalPanel></div>}
+  </div>;
+}
+
+function EmbeddedAgentsPage() {
   const api = useTrustFuturesApi();
   const [agents, setAgents] = useState<Array<{ agent: AgentResource; risk: AgentRiskResource }>>([]);
   const [error, setError] = useState("");

@@ -12,8 +12,9 @@ const ExternalWalletControl = dynamic(
 
 export function AppFrame({ children }: { children: ReactNode }) {
   const [apiOnline, setApiOnline] = useState(false);
-  const walletMode = resolveWalletMode(process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID);
+  const walletMode = resolveWalletMode(process.env.NEXT_PUBLIC_EMBEDDED_DEMO);
   useEffect(() => {
+    if (walletMode.kind === "public") { setApiOnline(true); return; }
     let active = true;
     const check = () => fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3001"}/healthz`)
       .then((response) => { if (active) setApiOnline(response.ok); })
@@ -21,9 +22,9 @@ export function AppFrame({ children }: { children: ReactNode }) {
     check();
     const timer = window.setInterval(check, 10_000);
     return () => { active = false; window.clearInterval(timer); };
-  }, []);
-  const wallet = walletMode.kind === "external"
+  }, [walletMode.kind]);
+  const wallet = walletMode.kind === "public"
     ? <ExternalWalletControl />
     : <span className="embedded-account"><i />EMBEDDED DEMO ACCOUNT</span>;
-  return <TechnicalShell apiOnline={apiOnline} modeLabel="LOCAL DIGITAL TWIN" walletControl={wallet}>{children}</TechnicalShell>;
+  return <TechnicalShell apiOnline={apiOnline} modeLabel={walletMode.kind === "public" ? "PUBLIC TESTNET" : "LOCAL DIGITAL TWIN"} walletControl={wallet}>{children}</TechnicalShell>;
 }

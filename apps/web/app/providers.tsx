@@ -15,10 +15,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: { queries: { staleTime: 2_000, retry: 1 } },
   }));
-  const walletMode = resolveWalletMode(process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID);
+  const walletMode = resolveWalletMode(process.env.NEXT_PUBLIC_EMBEDDED_DEMO);
   const application = <CrossChainOrchestratorProvider apiBaseUrl={process.env.NEXT_PUBLIC_API_URL}>{children}</CrossChainOrchestratorProvider>;
-  const content = walletMode.kind === "external"
-    ? <ExternalWalletProviders projectId={walletMode.projectId}>{application}</ExternalWalletProviders>
-    : application;
+  const content = <ExternalWalletProviders>{application}</ExternalWalletProviders>;
   return <QueryClientProvider client={queryClient}>{content}</QueryClientProvider>;
 }

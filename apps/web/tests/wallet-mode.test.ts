@@ -3,19 +3,18 @@ import test from "node:test";
 
 import { resolveWalletMode } from "../lib/wallet/mode";
 
-test("embedded mode never initializes WalletConnect without a configured project", () => {
+test("public injected-wallet mode is the zero-config default", () => {
   assert.deepEqual(resolveWalletMode(undefined), {
-    kind: "embedded",
-    label: "Embedded demo account",
+    kind: "public",
+    label: "Public testnet",
   });
-  assert.equal(resolveWalletMode("trustfutures-testnet").kind, "embedded");
 });
 
-test("a plausible WalletConnect project id enables external wallet mode", () => {
-  const projectId = "a".repeat(32);
-  assert.deepEqual(resolveWalletMode(projectId), {
-    kind: "external",
-    label: "External wallet",
-    projectId,
+test("the local digital twin requires an explicit embedded-demo flag", () => {
+  assert.deepEqual(resolveWalletMode("1"), {
+    kind: "embedded",
+    label: "Embedded demo",
   });
+  assert.equal(resolveWalletMode("true").kind, "embedded");
+  assert.equal(resolveWalletMode("0").kind, "public");
 });

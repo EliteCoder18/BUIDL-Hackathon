@@ -27,7 +27,21 @@ MVP coverage is capped at **1,000 mUSDC**. Quotes contain `jobKey`, `underwriter
 - `contracts/src/CoverageVault.sol`, `UnderwriterRegistry.sol`, `PolicyManager.sol`: ERC-4626-style senior accounting, junior capital and nonce controls, EIP-712 quote acceptance, and 20/80 loss waterfall.
 - `services/prover/attestcoin-worker.ts`: `@gluwa/usc-sdk` worker that waits for attestation, gets a continuity proof, and submits it to CC3. `PostgresProofQueue` makes retries durable when `DATABASE_URL` is set.
 - `services/underwriter/risk-engine.mjs`: deterministic bounded risk score; `services/underwriter/explanation.mjs` keeps OpenAI explanation advisory with deterministic fallback.
-- `services/api`: REST routes for quotes, proof queue, and agent risk. `apps/web`: Next.js dashboard with wagmi, viem, RainbowKit wallet connection, and live quote API hydration.
+- `services/api`: REST routes for quotes, proof queue, and agent risk. `apps/web`: Next.js dashboard with wagmi, viem, an injected MetaMask transaction layer, receipt-driven XState orchestration, and an optional embedded API-backed twin.
+
+## Public frontend (free hosting)
+
+The web app defaults to a public, client-side testnet mode and requires no WalletConnect project or paid RPC account. It supports:
+
+- MetaMask/injected EIP-1193 connection and one-click Sepolia ↔ Creditcoin CC3 switching.
+- Public Sepolia mock-asset mint, exact approval, and `TreasuryJobManager.createJob` transactions.
+- Public CC3 mock-asset mint, LP vault deposits, and junior underwriter deposits.
+- Non-custodial EIP-712 quote signing plus portable JSON quote acceptance.
+- Explorer-linked contract addresses and the confirmed Sepolia → Attestcoin → CC3 failure/payout loop.
+
+Deploy `apps/web` on Vercel's free tier with no environment variables. Optional `NEXT_PUBLIC_SEPOLIA_RPC_URL` and `NEXT_PUBLIC_CREDITCOIN_RPC_URL` overrides can be supplied if public RPC rate limits become restrictive. Set `NEXT_PUBLIC_EMBEDDED_DEMO=1` only when running the local API-backed twin.
+
+Visitors need free Sepolia ETH and free Creditcoin testnet tCTC for gas. The Creditcoin network is added by the wallet automatically; the official testnet endpoint is `https://rpc.cc3-testnet.creditcoin.network`, chain ID `102031`. Mock mUSDC can be minted from inside the app.
 
 ## Run locally
 
@@ -40,6 +54,8 @@ npm run api
 
 cd apps/web && npm install && npm run dev
 ```
+
+`npm run demo` explicitly enables the embedded local twin. Running `npm --prefix apps/web run dev` without `NEXT_PUBLIC_EMBEDDED_DEMO=1` starts the public testnet interface.
 
 The contract compile test resolves `@gluwa/usc-contracts` directly, and the local Ganache EVM test executes ERC-8004-bound jobs through success, violation, and permissionless expiry. This catches the source-chain integration boundary even where Foundry is not installed. If Foundry is available, `foundry.toml` is ready for `forge build` and future fuzz/invariant suites.
 

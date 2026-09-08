@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/agents", label: "Agents", index: "02" },
   { href: "/jobs/new", label: "Create job", index: "03" },
   { href: "/vault", label: "LP vault", index: "04" },
+  { href: "/underwrite", label: "Underwrite", index: "05" },
 ] as const;
 
 export interface TechnicalShellProps {

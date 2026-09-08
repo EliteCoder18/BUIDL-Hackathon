@@ -2,12 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { PublicMandateForm } from "../../../components/transactions/PublicMandateForm";
 import { SagaRail } from "../../../components/dashboard/SagaRail";
 import { StatusChip } from "../../../components/ui/StatusChip";
 import { TechnicalPanel } from "../../../components/ui/TechnicalPanel";
 import { useCrossChainOrchestrator } from "../../../lib/orchestration";
+import { resolveWalletMode } from "../../../lib/wallet/mode";
 
 export default function CreateJobPage() {
+  const mode = resolveWalletMode(process.env.NEXT_PUBLIC_EMBEDDED_DEMO);
+  return mode.kind === "public" ? <PublicMandateForm /> : <EmbeddedCreateJobPage />;
+}
+
+function EmbeddedCreateJobPage() {
   const router = useRouter();
   const { api, state } = useCrossChainOrchestrator();
   const [busy, setBusy] = useState(false);

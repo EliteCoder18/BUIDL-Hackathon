@@ -1,11 +1,18 @@
 "use client";
 
-import "@rainbow-me/rainbowkit/styles.css";
-import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit";
-import { WagmiProvider } from "wagmi";
-import { sepolia } from "wagmi/chains";
+import { createConfig, http, injected, WagmiProvider } from "wagmi";
+import { creditcoinTestnet, publicSepolia, supportedChains } from "../lib/wallet/chains";
 
-export function ExternalWalletProviders({ children, projectId }: { children: React.ReactNode; projectId: string }) {
-  const config = getDefaultConfig({ appName: "TrustFutures", projectId, chains: [sepolia], ssr: true });
-  return <WagmiProvider config={config}><RainbowKitProvider>{children}</RainbowKitProvider></WagmiProvider>;
+const config = createConfig({
+  chains: supportedChains,
+  connectors: [injected({ shimDisconnect: true })],
+  transports: {
+    [publicSepolia.id]: http(publicSepolia.rpcUrls.default.http[0]),
+    [creditcoinTestnet.id]: http(creditcoinTestnet.rpcUrls.default.http[0]),
+  },
+  ssr: true,
+});
+
+export function ExternalWalletProviders({ children }: { children: React.ReactNode }) {
+  return <WagmiProvider config={config}>{children}</WagmiProvider>;
 }
