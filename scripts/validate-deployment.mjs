@@ -48,7 +48,10 @@ export async function validateDeploymentFiles(root) {
   const apiKeys = new Set((api.envVars ?? []).map(({ key }) => key));
   for (const key of requiredApiEnvironment) if (!apiKeys.has(key)) throw new Error(`trustfutures-api requires ${key}`);
   if (vercel.framework !== "nextjs") throw new Error("Vercel framework must be nextjs");
-  if (vercel.outputDirectory !== "apps/web/.next") throw new Error("Vercel outputDirectory must target apps/web/.next");
+  if (vercel.outputDirectory !== ".next") throw new Error("Vercel outputDirectory must target .next relative to the apps/web project root");
+  if (vercel.installCommand !== "npm ci" || vercel.buildCommand !== "npm run build") {
+    throw new Error("Vercel commands must run relative to the apps/web project root");
+  }
   if (vercel.env && Object.keys(vercel.env).some((key) => SECRET_KEY.test(key))) {
     throw new Error("Vercel configuration must not contain backend secrets");
   }

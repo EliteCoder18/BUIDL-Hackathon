@@ -95,7 +95,7 @@ The worker fails closed before connecting if the chain IDs, required values, add
 
 ## 4. Deploy the Vercel frontend
 
-Import the repository as a Vercel project. Keep the repository root selected because `vercel.json` runs the install and build commands against `apps/web` and publishes `apps/web/.next`.
+Import the repository as a Vercel project and set **Root Directory** to `apps/web`. Vercel detects Next.js from that directory's `package.json`. The `vercel.json` commands run relative to this project root: `npm ci`, `npm run build`, and output `.next`. Do not prefix these commands with `apps/web` again.
 
 Configure:
 
