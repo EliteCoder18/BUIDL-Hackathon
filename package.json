@@ -10,6 +10,10 @@
     "test:contracts": "node --test tests/contracts/**/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "api": "node services/api/server.mjs",
+    "worker": "node --import tsx services/prover/worker-runner.mjs",
+    "validate:deployment": "node scripts/validate-deployment.mjs",
+    "verify:deployment": "node scripts/verify-deployment.mjs",
+    "dry-run:local": "playwright test e2e/success.spec.ts e2e/violation.spec.ts",
     "deploy:testnets": "node scripts/deploy.mjs",
     "test:watch": "node --test --watch tests/**/*.test.mjs",
     "lint": "node --check services/domain/policy.mjs",
@@ -23,8 +27,8 @@
     "@types/node": "^22.20.1",
     "ganache": "^7.9.2",
     "solc": "^0.8.30",
-    "tsx": "^4.23.12",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "yaml": "^2.9.0"
   },
   "engines": {
     "node": ">=20"
@@ -34,6 +38,7 @@
     "@gluwa/usc-sdk": "^0.18.0",
     "ethers": "^6.15.0",
     "openai": "^6.49.0",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "tsx": "^4.23.12"
   }
 }

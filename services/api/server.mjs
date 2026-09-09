@@ -5,8 +5,10 @@ import { createLocalChainRuntime } from "../local-chain/runtime.mjs";
 import { signerFromEnvironment } from "../underwriter/quote-signer.mjs";
 import { PostgresProofQueue } from "../prover/postgres-proof-queue.mjs";
 import { corsHeaders } from "./cors.mjs";
+import { validateApiEnvironment } from "../deployment/config.mjs";
 
 const demoMode = process.env.TRUSTFUTURES_DEMO === "true";
+if (process.env.DEPLOYMENT_ENV === "render") validateApiEnvironment(process.env);
 const runtime = demoMode ? await createLocalChainRuntime({
   sepoliaPort: Number(process.env.SEPOLIA_LOCAL_PORT ?? 8545),
   creditcoinPort: Number(process.env.CREDITCOIN_LOCAL_PORT ?? 9545),

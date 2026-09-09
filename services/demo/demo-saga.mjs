@@ -4,6 +4,7 @@ import { createRiskClient } from "../underwriter/risk-client.mjs";
 import { explainQuote } from "../underwriter/explanation.mjs";
 import { DemoStore } from "./demo-store.mjs";
 import { LocalProofBridge } from "../local-chain/local-proof-bridge.mjs";
+import { boundedFailureProbability } from "../underwriter/risk-engine.mjs";
 
 const QUOTE_TYPES = {
   Quote: [
@@ -18,7 +19,6 @@ const QUOTE_TYPES = {
   ],
 };
 const STRATEGIES = ["conservative", "balanced", "aggressive"];
-const STRATEGY_MULTIPLIERS = [1.35, 1, 0.72];
 const ZERO_JOB_KEY = `0x${"00".repeat(32)}`;
 
 function transaction(chain, receipt) {
@@ -34,7 +34,7 @@ export function createDemoSaga(runtime, {
 
   async function buildQuotes(agentId, coverageAmount, jobKey) {
     const agent = store.requireAgent(agentId);
-    const riskProfile = await riskClient.score(agent.history, { agentId: `agent-${String(agentId).padStart(2, "0")}`, mandateCategory: "swap", coverageSize: Number(coverageAmount), liveOutcomeCount: store.liveOutcomeCount(agentId), attestedEventValid: store.liveOutcomeCount(agentId) > 0 });
+    const riskProfile = await riskClient.score(agent.history, { agentId: `agent-${String(agentId).padStart(2, "0")}`, mandateCategory: "swap", coverageSizeBaseUnits: coverageAmount, liveOutcomeCount: store.liveOutcomeCount(agentId), attestedEventValid: store.liveOutcomeCount(agentId) > 0 });
     if (riskProfile.abstain) return {};
     const latestBlock = await runtime.creditcoin.provider.getBlock("latest");
     const validUntil = BigInt(latestBlock.timestamp + 600);
@@ -45,7 +45,7 @@ export function createDemoSaga(runtime, {
       verifyingContract: await runtime.contracts.policy.getAddress(),
     };
     const entries = await Promise.all(runtime.accounts.underwriters.map(async (underwriter, index) => {
-      const failureProbabilityBps = Math.max(100, Math.min(9_500, Math.round(riskProfile.failureProbabilityBps * STRATEGY_MULTIPLIERS[index])));
+      const failureProbabilityBps = boundedFailureProbability(agent.history, { strategy: STRATEGIES[index], modelFailureProbabilityBps: riskProfile.failureProbabilityBps });
       const premiumBps = Math.max(75, Math.min(3_000, Math.round(failureProbabilityBps * 1.35 + 50)));
       const premiumAmount = coverageAmount * BigInt(premiumBps) / 10_000n;
       const juniorAmount = coverageAmount / 5n;

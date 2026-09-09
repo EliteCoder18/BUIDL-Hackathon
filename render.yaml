@@ -1,0 +1,52 @@
+{
+  "services": [
+    {
+      "type": "web",
+      "name": "trustfutures-api",
+      "runtime": "node",
+      "buildCommand": "npm ci",
+      "startCommand": "npm run api",
+      "healthCheckPath": "/healthz",
+      "envVars": [
+        { "key": "DEPLOYMENT_ENV", "value": "render" },
+        { "key": "DATABASE_URL", "sync": false },
+        { "key": "CORS_ORIGIN", "sync": false },
+        { "key": "RISK_SERVICE_URL", "sync": false },
+        { "key": "CREDITCOIN_CHAIN_ID", "value": "102031" },
+        { "key": "POLICY_MANAGER_ADDRESS", "sync": false },
+        { "key": "UNDERWRITER_CONSERVATIVE_PRIVATE_KEY", "sync": false },
+        { "key": "UNDERWRITER_BALANCED_PRIVATE_KEY", "sync": false },
+        { "key": "UNDERWRITER_AGGRESSIVE_PRIVATE_KEY", "sync": false },
+        { "key": "OPENAI_API_KEY", "sync": false }
+      ]
+    },
+    {
+      "type": "worker",
+      "name": "trustfutures-proof-worker",
+      "runtime": "node",
+      "buildCommand": "npm ci",
+      "startCommand": "npm run worker",
+      "envVars": [
+        { "key": "DATABASE_URL", "sync": false },
+        { "key": "SEPOLIA_RPC_URL", "sync": false },
+        { "key": "CREDITCOIN_RPC_URL", "sync": false },
+        { "key": "CREDITCOIN_CHAIN_ID", "value": "102031" },
+        { "key": "PROOF_BUILDER_URL", "sync": false },
+        { "key": "USC_SEPOLIA_CHAIN_KEY", "value": "1" },
+        { "key": "ATTESTCOIN_ADAPTER_ADDRESS", "sync": false },
+        { "key": "CREDITCOIN_PRIVATE_KEY", "sync": false },
+        { "key": "PROOF_WORKER_POLL_MS", "value": "5000" },
+        { "key": "PROOF_WORKER_MAX_ATTEMPTS", "value": "5" }
+      ]
+    },
+    {
+      "type": "web",
+      "name": "trustfutures-risk",
+      "runtime": "python",
+      "rootDir": "services/ml",
+      "buildCommand": "pip install -r requirements.txt",
+      "startCommand": "uvicorn app:app --host 0.0.0.0 --port $PORT",
+      "healthCheckPath": "/healthz"
+    }
+  ]
+}

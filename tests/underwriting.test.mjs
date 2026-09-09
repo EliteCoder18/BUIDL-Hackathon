@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { priceQuote, explainFallback } from "../services/underwriter/risk-engine.mjs";
+import { boundedFailureProbability, priceQuote, explainFallback } from "../services/underwriter/risk-engine.mjs";
 
 const strongHistory = {
   successCount: 18,
@@ -36,4 +36,21 @@ test("fallback explanation exposes decision factors without changing quote", () 
   const explanation = explainFallback(quote);
   assert.equal(explanation.protectiveTerms, "20% junior first-loss stake; 80% senior LP capital.");
   assert.ok(explanation.topRisks.length > 0);
+});
+
+test("signed pricing cannot fall below the deterministic history risk floor", () => {
+  const before = {
+    successCount: 9,
+    violationCount: 0,
+    expiryCount: 1,
+    meanSlippageBps: 24,
+    meanLatenessBps: 42,
+    amountVsP95Bps: 9_400,
+    deadlineTightnessBps: 280,
+    volatilityBps: 300,
+  };
+  const after = { ...before, violationCount: 1 };
+
+  assert.equal(boundedFailureProbability(before, { strategy: "balanced", modelFailureProbabilityBps: 100 }), 756);
+  assert.equal(boundedFailureProbability(after, { strategy: "balanced", modelFailureProbabilityBps: 100 }), 1247);
 });

@@ -2,6 +2,9 @@ import { priceQuote } from "./risk-engine.mjs";
 
 export function featuresFromHistory(history, context = {}) {
   const total = history.successCount + history.violationCount + history.expiryCount;
+  const coverageSize = context.coverageSizeBaseUnits === undefined
+    ? context.coverageSize ?? 100_000
+    : Number(context.coverageSizeBaseUnits) / 1_000_000;
   return {
     failure_rate: total === 0 ? 0.5 : (history.violationCount + history.expiryCount) / total,
     mean_slippage_bps: history.meanSlippageBps,
@@ -11,7 +14,7 @@ export function featuresFromHistory(history, context = {}) {
     volatility_bps: history.volatilityBps,
     agent_id: context.agentId ?? "agent-00",
     mandate_category: context.mandateCategory ?? "swap",
-    coverage_size: context.coverageSize ?? 100_000,
+    coverage_size: coverageSize,
     live_outcome_count: context.liveOutcomeCount ?? 0,
     attested_event_valid: context.attestedEventValid ?? false,
   };
@@ -63,7 +66,7 @@ function validServiceResult(value) {
     && Array.isArray(value.diagnostics.warnings);
 }
 
-export function createRiskClient({ baseUrl = "http://127.0.0.1:8000", fetchImpl = fetch } = {}) {
+export function createRiskClient({ baseUrl = process.env.RISK_SERVICE_URL ?? "http://127.0.0.1:8000", fetchImpl = fetch } = {}) {
   return {
     async score(history, context = {}) {
       try {

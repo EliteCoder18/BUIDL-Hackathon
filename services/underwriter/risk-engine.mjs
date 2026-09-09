@@ -8,6 +8,14 @@ const STRATEGY_MULTIPLIER = Object.freeze({
 
 const MODEL_VERSION = "trustfutures-risk-v1-fixed-seed";
 
+export function boundedFailureProbability(history, { strategy, modelFailureProbabilityBps }) {
+  if (!Object.hasOwn(STRATEGY_MULTIPLIER, strategy)) throw new Error("unknown strategy");
+  if (!Number.isFinite(modelFailureProbabilityBps)) throw new Error("model failure probability is required");
+  const deterministicFloor = priceQuote(history, { coverageAmount: 1n, strategy }).failureProbabilityBps;
+  const strategyAdjustedModel = Math.round(modelFailureProbabilityBps * STRATEGY_MULTIPLIER[strategy]);
+  return Math.max(deterministicFloor, Math.max(100, Math.min(9_500, strategyAdjustedModel)));
+}
+
 export function priceQuote(history, { coverageAmount, strategy }) {
   if (!Object.hasOwn(STRATEGY_MULTIPLIER, strategy)) throw new Error("unknown strategy");
   if (coverageAmount <= 0n) throw new Error("coverage must be positive");

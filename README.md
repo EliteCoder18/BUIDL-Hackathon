@@ -41,6 +41,12 @@ npm run api
 cd apps/web && npm install && npm run dev
 ```
 
+## Cloud deployment
+
+The supported hosting layout is Vercel for `apps/web`, Render for the Node API, proof worker, and Python risk service, and Supabase Postgres for the durable proof queue. Validate the manifests and service builds with `npm run verify:deployment`, then execute the complete local success and violation paths with `npm run dry-run:local`.
+
+Follow [`docs/deployment.md`](docs/deployment.md) for environment variables, Supabase migration, Render Blueprint setup, Vercel setup, service interconnection, health checks, and rollback. This hosting configuration does not change the testnet-only safety boundary.
+
 The contract compile test resolves `@gluwa/usc-contracts` directly, and the local Ganache EVM test executes ERC-8004-bound jobs through success, violation, and permissionless expiry. This catches the source-chain integration boundary even where Foundry is not installed. If Foundry is available, `foundry.toml` is ready for `forge build` and future fuzz/invariant suites.
 
 ## Testnet deployment

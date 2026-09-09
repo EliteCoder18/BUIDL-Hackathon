@@ -20,3 +20,5 @@ TrustFutures is deliberately a **testnet prototype**. The approved plan explicit
 5. External review of the ML data lineage, calibration, drift policy, and model-governance process.
 
 Until these gates are independently approved, deploy only to Sepolia and Creditcoin CC3 Testnet.
+
+The Vercel, Render, and Supabase testnet hosting procedure is documented in [`deployment.md`](deployment.md). Passing its local and CI dry runs demonstrates deployment readiness for the prototype; it does not satisfy the mainnet gates above.

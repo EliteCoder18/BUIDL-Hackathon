@@ -1,6 +1,9 @@
 node_modules/
 apps/web/node_modules/
 apps/web/.next/
+.DS_Store
+.playwright-cli/
+*.tsbuildinfo
 .env
 .env.local
 coverage/
