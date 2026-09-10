@@ -6,6 +6,7 @@ import {
   validateApiEnvironment,
   validateWorkerEnvironment,
 } from "../services/deployment/config.mjs";
+import { hostedEnvironment } from "../services/deployment/hosted-environment.mjs";
 
 const privateKey = (digit) => `0x${digit.repeat(64)}`;
 
@@ -66,4 +67,9 @@ test("public environment audit identifies secret-shaped frontend variables", () 
     allowed: ["NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID"],
     unsafe: ["NEXT_PUBLIC_DATABASE_URL", "NEXT_PUBLIC_SIGNER_PRIVATE_KEY"],
   });
+});
+
+test("hosted launcher enables the interactive demo unless explicitly disabled", () => {
+  assert.equal(hostedEnvironment({}).TRUSTFUTURES_DEMO, "true");
+  assert.equal(hostedEnvironment({ TRUSTFUTURES_DEMO: "false" }).TRUSTFUTURES_DEMO, "false");
 });

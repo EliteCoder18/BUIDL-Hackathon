@@ -1,14 +1,9 @@
 import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
+import { hostedEnvironment } from "../services/deployment/hosted-environment.mjs";
 
 // One free Render service: public Node API plus loopback-only Python risk model.
-const env = {
-  ...process.env,
-  RISK_SERVICE_URL: "http://127.0.0.1:8000",
-  OMP_NUM_THREADS: "1",
-  OPENBLAS_NUM_THREADS: "1",
-  MKL_NUM_THREADS: "1",
-};
+const env = hostedEnvironment();
 const children = [];
 let stopping = false;
 let killTimer;
