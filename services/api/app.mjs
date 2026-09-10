@@ -6,7 +6,21 @@ import { ApiInputError, assertHex, parseOutcome, parseQuoteIndex, validateJobInp
 const MODEL_VERSION = "trustfutures-risk-v1-fixed-seed";
 const json = (body, status = 200) => Response.json(serialize(body), { status });
 
-export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quoteSigner = null, saga = null, riskClient = createRiskClient() } = {}) {
+export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quoteSigner = null, saga = null, riskClient = createRiskClient(), liveJobVerifier = null, liveAgentHistory = null, liveSigningDomain = null } = {}) {
+  async function quotePayload({ jobKey, coverageAmount, history, agentId, mandateCategory = "swap", liveOutcomeCount = 0, attestedEventValid = false }) {
+    const coverage = BigInt(coverageAmount);
+    if (coverage > 1_000_000_000n) throw new ApiInputError("COVERAGE_LIMIT", "maximum MVP coverage is 1,000 mUSDC");
+    const risk = await riskClient.score(history, { agentId, mandateCategory, coverageSizeBaseUnits: coverage, liveOutcomeCount, attestedEventValid });
+    if (risk.abstain) return { error: "risk model abstained", diagnostics: risk.diagnostics };
+    const rawQuotes = ["conservative", "balanced", "aggressive"].map((strategy, nonce) => {
+      const quote = priceQuote(history, { coverageAmount: coverage, strategy });
+      const failureProbabilityBps = boundedFailureProbability(history, { strategy, modelFailureProbabilityBps: risk.failureProbabilityBps });
+      const premiumBps = Math.max(75, Math.min(3_000, Math.round(failureProbabilityBps * 1.35 + 50)));
+      return { jobKey, coverageAmount: coverage, ...quote, failureProbabilityBps, premiumBps, premiumAmount: coverage * BigInt(premiumBps) / 10_000n, modelHash: risk.modelHash, validUntil: Math.floor(Date.now() / 1000) + 600, nonce, underwriter: "0x0000000000000000000000000000000000000000", riskProfile: risk };
+    });
+    const signedQuotes = quoteSigner ? await Promise.all(rawQuotes.map(quoteSigner)) : rawQuotes;
+    return { quotes: signedQuotes.map(serializeQuote), signing: quoteSigner ? "EIP-712 signed" : "Quotes require configured underwriter keys before on-chain acceptance." };
+  }
   return {
     async handle(request) {
       const url = new URL(request.url);
@@ -18,21 +32,21 @@ export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quo
           const routed = await handleSagaRoute({ request, url, saga });
           if (routed) return routed;
         }
+        if (request.method === "POST" && url.pathname === "/v1/live/quotes") {
+          if (!liveJobVerifier || !liveAgentHistory || !quoteSigner || !liveSigningDomain) return json({ code: "LIVE_WALLET_UNAVAILABLE", error: "Live wallet verification and signing are not configured" }, 503);
+          const { sourceTxHash, coverageAmount } = await request.json();
+          const job = await liveJobVerifier(sourceTxHash);
+          const history = await liveAgentHistory(job.agentId);
+          if (!history) return json({ code: "AGENT_HISTORY_UNAVAILABLE", error: "Verified agent has no trusted risk history" }, 422);
+          const payload = await quotePayload({ jobKey: job.jobKey, coverageAmount, history, agentId: job.agentId, liveOutcomeCount: 0, attestedEventValid: false });
+          if (payload.error) return json(payload, 422);
+          return json({ job, domain: liveSigningDomain, ...payload });
+        }
         if (request.method === "POST" && url.pathname === "/v1/quotes") {
           const { jobKey, coverageAmount, history, agentId, mandateCategory, liveOutcomeCount, attestedEventValid } = await request.json();
           if (!jobKey || !history || !agentId || !mandateCategory || !Number.isInteger(liveOutcomeCount) || typeof attestedEventValid !== "boolean") return json({ error: "jobKey, history, agentId, mandateCategory, liveOutcomeCount, and attestedEventValid are required" }, 400);
-          const coverage = BigInt(coverageAmount);
-          if (coverage > 1_000_000_000n) return json({ error: "maximum MVP coverage is 1,000 mUSDC" }, 400);
-          const risk = await riskClient.score(history, { agentId, mandateCategory, coverageSizeBaseUnits: coverage, liveOutcomeCount, attestedEventValid });
-          if (risk.abstain) return json({ error: "risk model abstained", diagnostics: risk.diagnostics }, 422);
-          const rawQuotes = ["conservative", "balanced", "aggressive"].map((strategy, nonce) => {
-            const quote = priceQuote(history, { coverageAmount: coverage, strategy });
-            const failureProbabilityBps = boundedFailureProbability(history, { strategy, modelFailureProbabilityBps: risk.failureProbabilityBps });
-            const premiumBps = Math.max(75, Math.min(3_000, Math.round(failureProbabilityBps * 1.35 + 50)));
-            return { jobKey, coverageAmount: coverage, ...quote, failureProbabilityBps, premiumBps, premiumAmount: coverage * BigInt(premiumBps) / 10_000n, modelHash: risk.modelHash, validUntil: Math.floor(Date.now() / 1000) + 600, nonce, underwriter: "0x0000000000000000000000000000000000000000" };
-          });
-          const signedQuotes = quoteSigner ? await Promise.all(rawQuotes.map(quoteSigner)) : rawQuotes;
-          return json({ quotes: signedQuotes.map(serializeQuote), signing: quoteSigner ? "EIP-712 signed" : "Quotes require configured underwriter keys before on-chain acceptance." });
+          const payload = await quotePayload({ jobKey, coverageAmount, history, agentId, mandateCategory, liveOutcomeCount, attestedEventValid });
+          return payload.error ? json(payload, 422) : json(payload);
         }
         if (request.method === "POST" && url.pathname === "/v1/proofs") {
           const { jobKey, sourceTxHash } = await request.json();

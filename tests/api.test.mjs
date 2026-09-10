@@ -52,3 +52,31 @@ test("configured bots return EIP-712 signed quotes without changing model values
   assert.match(body.quotes[0].signature, /^0x[0-9a-f]{130}$/);
   assert.match(body.quotes[0].underwriter, /^0x[0-9a-f]{40}$/i);
 });
+
+test("live quote endpoint prices only a backend-verified Sepolia job", async () => {
+  const signer = createQuoteSigner({
+    chainId: 102031,
+    verifyingContract: "0x0000000000000000000000000000000000001234",
+    privateKeys: { conservative: `0x${"11".repeat(32)}`, balanced: `0x${"22".repeat(32)}`, aggressive: `0x${"33".repeat(32)}` },
+  });
+  const verifiedJob = { sourceTxHash: `0x${"55".repeat(32)}`, jobKey: `0x${"44".repeat(32)}`, jobId: "7", agentId: "10130", amountIn: "100000000", minOut: "99000000", deadline: "2000000000" };
+  const api = createApi({
+    quoteSigner: signer,
+    riskClient: offlineRiskClient(),
+    liveJobVerifier: async () => verifiedJob,
+    liveAgentHistory: () => history,
+    liveSigningDomain: { chainId: 102031, verifyingContract: "0x0000000000000000000000000000000000001234" },
+  });
+  const response = await api.handle(new Request("http://local/v1/live/quotes", { method: "POST", body: JSON.stringify({ sourceTxHash: verifiedJob.sourceTxHash, coverageAmount: "100000000" }) }));
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.job.jobKey, verifiedJob.jobKey);
+  assert.deepEqual(body.domain, { chainId: 102031, verifyingContract: "0x0000000000000000000000000000000000001234" });
+  assert.match(body.quotes[0].signature, /^0x[0-9a-f]{130}$/);
+});
+
+test("live quote endpoint fails closed without receipt verification and signers", async () => {
+  const response = await createApi().handle(new Request("http://local/v1/live/quotes", { method: "POST", body: JSON.stringify({ sourceTxHash: `0x${"55".repeat(32)}`, coverageAmount: "100000000" }) }));
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).code, "LIVE_WALLET_UNAVAILABLE");
+});

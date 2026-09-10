@@ -3,8 +3,10 @@ const PRIVATE_KEY = /^0x[0-9a-fA-F]{64}$/;
 const ALLOWED_PUBLIC_KEYS = new Set([
   "NEXT_PUBLIC_API_URL",
   "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID",
+  "NEXT_PUBLIC_SEPOLIA_RPC_URL",
+  "NEXT_PUBLIC_CREDITCOIN_RPC_URL",
 ]);
-const SECRET_PUBLIC_KEY = /(DATABASE|PRIVATE|SECRET|TOKEN|PASSWORD|RPC|OPENAI|SIGNER)/i;
+const SECRET_PUBLIC_KEY = /(DATABASE|PRIVATE|SECRET|TOKEN|PASSWORD|OPENAI|SIGNER)/i;
 
 function required(env, key) {
   const value = env[key]?.trim();
@@ -44,6 +46,13 @@ export function validateApiEnvironment(env = process.env) {
   ];
   if (new Set(underwriterPrivateKeys.map((value) => value.toLowerCase())).size !== underwriterPrivateKeys.length) {
     throw new Error("underwriter private keys must be distinct");
+  }
+  const liveWallet = env.TRUSTFUTURES_LIVE_WALLET === "true";
+  if (liveWallet) {
+    required(env, "SEPOLIA_RPC_URL");
+    address(env, "TREASURY_JOB_MANAGER_ADDRESS");
+    const liveAgentId = required(env, "LIVE_AGENT_ID");
+    if (!/^\d+$/.test(liveAgentId)) throw new Error("LIVE_AGENT_ID must be numeric");
   }
   return {
     databaseUrl,

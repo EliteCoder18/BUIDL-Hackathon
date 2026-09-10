@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { JsonRpcProvider } from "ethers";
 import { createApi } from "./app.mjs";
 import { createDemoSaga } from "../demo/demo-saga.mjs";
 import { createLocalChainRuntime } from "../local-chain/runtime.mjs";
@@ -6,6 +7,7 @@ import { signerFromEnvironment } from "../underwriter/quote-signer.mjs";
 import { PostgresProofQueue } from "../prover/postgres-proof-queue.mjs";
 import { corsHeaders } from "./cors.mjs";
 import { validateApiEnvironment } from "../deployment/config.mjs";
+import { verifyLiveJob } from "./live-job-verifier.mjs";
 
 const demoMode = process.env.TRUSTFUTURES_DEMO === "true";
 if (process.env.DEPLOYMENT_ENV === "render") validateApiEnvironment(process.env);
@@ -15,7 +17,22 @@ const runtime = demoMode ? await createLocalChainRuntime({
 }) : null;
 const queue = process.env.DATABASE_URL ? new PostgresProofQueue(process.env.DATABASE_URL) : undefined;
 if (queue) await queue.migrate();
-const api = createApi({ quoteSigner: signerFromEnvironment(), queue, saga: runtime ? createDemoSaga(runtime) : null });
+const saga = runtime ? createDemoSaga(runtime) : null;
+const quoteSigner = signerFromEnvironment();
+const liveWallet = process.env.TRUSTFUTURES_LIVE_WALLET === "true";
+const sourceProvider = liveWallet ? new JsonRpcProvider(process.env.SEPOLIA_RPC_URL, 11155111) : null;
+const liveAgentId = process.env.LIVE_AGENT_ID ?? "10130";
+const liveJobVerifier = liveWallet && sourceProvider
+  ? (sourceTxHash) => verifyLiveJob({ sourceTxHash, expectedManager: process.env.TREASURY_JOB_MANAGER_ADDRESS, provider: sourceProvider })
+  : null;
+const api = createApi({
+  quoteSigner,
+  queue,
+  saga,
+  liveJobVerifier,
+  liveAgentHistory: liveWallet ? (agentId) => agentId === liveAgentId ? saga?.getAgents()[0]?.history : null : null,
+  liveSigningDomain: liveWallet ? { chainId: 102031, verifyingContract: process.env.POLICY_MANAGER_ADDRESS } : null,
+});
 const server = createServer(async (req, res) => {
   const cors = corsHeaders(req.headers.origin);
   if (req.method === "OPTIONS") {
@@ -47,6 +64,7 @@ async function shutdown() {
   server.close();
   if (queue) await queue.close();
   if (runtime) await runtime.close();
+  if (sourceProvider) sourceProvider.destroy();
 }
 process.once("SIGINT", shutdown);
 process.once("SIGTERM", shutdown);

@@ -81,6 +81,26 @@ export interface AuctionResource {
   quotes: ApiQuote[];
 }
 
+export interface LiveQuote {
+  jobKey: Bytes32;
+  underwriter: Address;
+  coverageAmount: IntegerString;
+  premiumAmount: IntegerString;
+  juniorAmount: IntegerString;
+  validUntil: IntegerString;
+  modelHash: Bytes32;
+  nonce: IntegerString;
+  signature: `0x${string}`;
+  strategy: "conservative" | "balanced" | "aggressive";
+}
+
+export interface LiveQuotesResource {
+  job: { sourceTxHash: `0x${string}`; jobKey: Bytes32; jobId: IntegerString; agentId: string; amountIn: IntegerString; minOut: IntegerString; deadline: IntegerString };
+  domain: { chainId: 102031; verifyingContract: Address };
+  signing: string;
+  quotes: LiveQuote[];
+}
+
 export interface PolicyResource {
   policyId: Bytes32;
   jobKey: Bytes32;
@@ -180,6 +200,45 @@ function bytes(value: unknown, size: number, label: string): `0x${string}` {
 
 function optionalString(source: JsonRecord, key: string): string | undefined {
   return source[key] === undefined ? undefined : string(source[key], key);
+}
+
+export function parseLiveQuotes(value: unknown): LiveQuotesResource {
+  const source = record(value, "live quotes");
+  const job = record(source.job, "verified live job");
+  const domain = record(source.domain, "live signing domain");
+  if (domain.chainId !== 102031) throw new TypeError("invalid live signing chain");
+  if (!Array.isArray(source.quotes)) throw new TypeError("invalid live quotes");
+  const quotes = source.quotes.map((value, index): LiveQuote => {
+    const quote = record(value, `live quote[${index}]`);
+    const strategy = string(quote.strategy, "live quote strategy");
+    if (strategy !== "conservative" && strategy !== "balanced" && strategy !== "aggressive") throw new TypeError("invalid live quote strategy");
+    return {
+      jobKey: bytes(quote.jobKey, 32, "live quote jobKey"),
+      underwriter: bytes(quote.underwriter, 20, "live quote underwriter") as Address,
+      coverageAmount: integerString(quote.coverageAmount, "live quote coverageAmount"),
+      premiumAmount: integerString(quote.premiumAmount, "live quote premiumAmount"),
+      juniorAmount: integerString(quote.juniorAmount, "live quote juniorAmount"),
+      validUntil: integerString(quote.validUntil, "live quote validUntil"),
+      modelHash: bytes(quote.modelHash, 32, "live quote modelHash"),
+      nonce: integerString(quote.nonce, "live quote nonce"),
+      signature: bytes(quote.signature, 65, "live quote signature"),
+      strategy,
+    };
+  });
+  return {
+    job: {
+      sourceTxHash: bytes(job.sourceTxHash, 32, "sourceTxHash"),
+      jobKey: bytes(job.jobKey, 32, "verified jobKey"),
+      jobId: integerString(job.jobId, "verified jobId"),
+      agentId: string(job.agentId, "verified agentId"),
+      amountIn: integerString(job.amountIn, "verified amountIn"),
+      minOut: integerString(job.minOut, "verified minOut"),
+      deadline: integerString(job.deadline, "verified deadline"),
+    },
+    domain: { chainId: 102031, verifyingContract: bytes(domain.verifyingContract, 20, "verifyingContract") as Address },
+    signing: string(source.signing, "live quote signing"),
+    quotes,
+  };
 }
 
 function stringArray(value: unknown, label: string): string[] {

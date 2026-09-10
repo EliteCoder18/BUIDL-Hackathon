@@ -7,6 +7,7 @@ import {
   parseCommandEnvelope,
   parseDemoState,
   parseJob,
+  parseLiveQuotes,
   parsePolicy,
   parseProof,
   parseVault,
@@ -16,6 +17,7 @@ import {
   type CommandEnvelope,
   type DemoStateResource,
   type JobResource,
+  type LiveQuotesResource,
   type PolicyResource,
   type ProofResource,
   type VaultResource,
@@ -102,6 +104,7 @@ export function createTrustFuturesApi(options: TrustFuturesApiOptions = {}) {
     executeJob: (jobKey: Bytes32, outcome: "success" | "violation") => command(`/v1/jobs/${jobKey}/execute`, parseJob, { outcome }),
     proveOutcome: (jobKey: Bytes32) => command("/v1/proofs", parseProof, { jobKey }),
     settlePolicy: (policyId: Bytes32) => command(`/v1/policies/${policyId}/settle`, parsePolicy, {}),
+    getLiveQuotes: (sourceTxHash: `0x${string}`, coverageAmount: `${bigint}`): Promise<LiveQuotesResource> => request("/v1/live/quotes", parseLiveQuotes, { method: "POST", body: JSON.stringify({ sourceTxHash, coverageAmount }) }),
   };
 }
 
@@ -112,6 +115,7 @@ export type {
   AuctionResource,
   DemoStateResource,
   JobResource,
+  LiveQuotesResource,
   PolicyResource,
   ProofResource,
   VaultResource,
