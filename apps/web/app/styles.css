@@ -17,9 +17,9 @@
   --amber: #ffb45d;
   --danger: #ff5e66;
   --radius: 28px;
-  --micro-copy: 8px;
-  --label-copy: 9px;
-  --nav-copy: 10px;
+  --micro-copy: 12px;
+  --label-copy: 13px;
+  --nav-copy: 14px;
 }
 
 * { box-sizing: border-box; }
@@ -34,6 +34,8 @@ body {
     radial-gradient(circle at 0% 58%, rgba(255, 94, 102, 0.08), transparent 29%),
     var(--void);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -105,7 +107,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .orbital-system__state { display: grid; gap: 2px; justify-items: end; }
 .orbital-system__mode { color: #665d74; font: 600 var(--micro-copy) ui-monospace, monospace; letter-spacing: .14em; }
 .orbital-system__wallet { min-width: 0; }
-.embedded-account { min-height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 13px; border: 1px solid var(--line); border-radius: 13px; color: #c0b8ce; background: rgba(255,255,255,.025); font: 600 var(--label-copy) ui-monospace, monospace; letter-spacing: .08em; }
+.embedded-account { min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 13px; border: 1px solid var(--line); border-radius: 13px; color: #c0b8ce; background: rgba(255,255,255,.025); font: 600 var(--label-copy) ui-monospace, monospace; letter-spacing: .08em; }
 .embedded-account i { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 12px var(--lime); }
 .execution-mode { display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.025); }
 .execution-mode button { min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; cursor: pointer; color: #aaa1b7; background: transparent; font: 700 10px ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
@@ -127,12 +129,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .route-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 35px; padding: 14px 2px 12px; }
 .route-heading h1 { max-width: 940px; margin: 10px 0 14px; font-size: clamp(42px, 6vw, 88px); font-weight: 600; line-height: .87; letter-spacing: -.07em; }
 .route-heading h1 em { color: var(--coral); font-family: Georgia, serif; font-weight: 400; }
-.route-heading p:not(.kicker) { max-width: 700px; margin: 0; color: #aaa1b7; font-size: 14px; line-height: 1.65; }
+.route-heading p:not(.kicker) { max-width: 700px; margin: 0; color: #c0b8ce; font-size: 16px; line-height: 1.65; }
 .kicker, .technical-panel__eyebrow { margin: 0; color: var(--lilac); font: 700 var(--label-copy) ui-monospace, monospace; letter-spacing: .18em; text-transform: uppercase; }
 .kicker span { color: var(--coral); margin-right: 11px; }
 .route-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 11px; }
 
-.technical-button { min-height: 42px; border: 1px solid var(--line-hot); border-radius: 14px; padding: 10px 14px; cursor: pointer; color: #d8d1e4; background: rgba(255,255,255,.025); font: 700 var(--label-copy) ui-monospace, monospace; letter-spacing: .09em; text-transform: uppercase; transition: .3s cubic-bezier(.16,1,.3,1); }
+.technical-button { min-height: 44px; border: 1px solid var(--line-hot); border-radius: 14px; padding: 10px 14px; cursor: pointer; color: #d8d1e4; background: rgba(255,255,255,.025); font: 700 var(--label-copy) ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; transition: .3s cubic-bezier(.16,1,.3,1); }
 .technical-button:hover:not(:disabled) { transform: translateY(-2px); color: white; border-color: var(--lilac); box-shadow: 0 14px 30px rgba(0,0,0,.2), 0 0 28px rgba(169,150,255,.12); }
 .technical-button--primary { color: #10090f; border-color: var(--coral); background: var(--coral); }
 .technical-button--primary:hover:not(:disabled) { color: #10090f; border-color: #ff8f95; box-shadow: 0 14px 34px rgba(255,94,102,.22); }
@@ -236,7 +238,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .simulation-disclosure p { margin: 7px 0 0; }
 
 .agent-matrix { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
-.agent-matrix .technical-panel:nth-child(even) { transform: translateY(36px); }
+.agent-matrix .technical-panel:nth-child(even) { transform: none; }
 .agent-identity { display: flex; align-items: center; gap: 21px; margin-bottom: 22px; }
 .agent-orb { width: 100px; height: 100px; flex: 0 0 auto; display: grid; place-items: center; position: relative; border: 1px solid rgba(169,150,255,.45); border-radius: 50%; background: radial-gradient(circle at 35% 28%, rgba(241,237,249,.3), rgba(169,150,255,.12) 22%, rgba(7,5,13,.8) 65%); box-shadow: inset -15px -17px 35px rgba(0,0,0,.5), 0 0 50px rgba(169,150,255,.1); }
 .agent-orb::before, .agent-orb::after { content: ""; position: absolute; inset: 9px; border: 1px dashed rgba(200,255,90,.36); border-radius: 50%; animation: orbit 11s linear infinite; }
@@ -258,8 +260,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .risk-analytics__bar { position: absolute; left: 50%; height: 100%; background: var(--coral); }
 .risk-analytics__bar--protective { right: 50%; left: auto; background: var(--lime); }
 .risk-analytics__bar--neutral { background: #746c7c; }
-.risk-analytics__summary { color: #a69dac; font-size: 11px; line-height: 1.55; }
+.risk-analytics__summary { color: #c0b8ce; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
 .risk-analytics__json { max-height: 190px; overflow: auto; padding: 12px; border: 1px solid var(--line); border-radius: 13px; color: #b8aecb; background: rgba(7,5,13,.62); font: var(--label-copy)/1.65 ui-monospace, monospace; }
+.model-evidence { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.model-evidence summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--lilac); font: 700 var(--label-copy) ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
 .quote-auction-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; perspective: 1400px; }
 .quote-card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 30px 30px 16px 30px; background: linear-gradient(155deg, rgba(31,19,46,.88), rgba(10,7,15,.9)); box-shadow: 0 25px 70px rgba(0,0,0,.15); transition: .35s cubic-bezier(.16,1,.3,1); }

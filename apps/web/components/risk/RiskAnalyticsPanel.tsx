@@ -1,6 +1,6 @@
 import type { RiskFeature } from "../../lib/trustfutures/types";
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { normaliseRiskFeatures } from "./risk-model";
+import { riskChartModel } from "./risk-model";
 
 export interface RiskExplanation {
   summary: string;
@@ -25,7 +25,7 @@ export function RiskAnalyticsPanel({
   compact = false,
   provenance,
 }: RiskAnalyticsPanelProps) {
-  const normalised = normaliseRiskFeatures(features);
+  const chart = riskChartModel(features);
   const protectiveTerms = typeof explanation.protectiveTerms === "string" ? [explanation.protectiveTerms] : explanation.protectiveTerms;
 
   return (
@@ -35,25 +35,31 @@ export function RiskAnalyticsPanel({
         {modelVersion && <code>{modelVersion}</code>}
       </div>
       <div className="risk-analytics__chart" role="img" aria-label="SHAP feature attribution chart">
-        <ResponsiveContainer width="100%" height={compact ? 176 : 228}>
-          <BarChart data={normalised} layout="vertical" margin={{ top: 4, right: 10, bottom: 4, left: compact ? 2 : 24 }}>
+        <ResponsiveContainer width="100%" height={Math.max(compact ? 190 : 220, chart.rows.length * (compact ? 42 : 50))}>
+          <BarChart data={chart.rows} layout="vertical" margin={{ top: 8, right: 18, bottom: 20, left: compact ? 8 : 24 }}>
             <CartesianGrid stroke="#152837" horizontal={false} />
-            <XAxis type="number" tick={{ fill: "#718a9b", fontSize: 8 }} axisLine={{ stroke: "#24445a" }} tickLine={false} />
-            <YAxis type="category" dataKey="name" width={compact ? 82 : 118} tick={{ fill: "#9bb0be", fontSize: 8 }} axisLine={false} tickLine={false} />
-            <Tooltip cursor={{ fill: "#10202b" }} contentStyle={{ background: "#050a0f", border: "1px solid #24445a", fontFamily: "ui-monospace", fontSize: 10 }} formatter={(value) => [Number(value).toFixed(3), "SHAP"]} />
+            <XAxis type="number" domain={chart.domain} tick={{ fill: "#a69dac", fontSize: 12 }} axisLine={{ stroke: "#4b405b" }} tickLine={false} tickFormatter={(value) => Number(value).toFixed(2)} />
+            <YAxis type="category" dataKey="label" width={compact ? 128 : 168} tick={{ fill: "#c0b8ce", fontSize: 12 }} axisLine={false} tickLine={false} />
+            <Tooltip cursor={{ fill: "rgba(169,150,255,.06)" }} contentStyle={{ background: "#0f0a18", border: "1px solid #4b405b", borderRadius: 12, fontFamily: "ui-monospace", fontSize: 12 }} formatter={(value, _name, item) => [`${Number(value).toFixed(3)} · observed ${item.payload.valueLabel}`, "SHAP impact"]} />
             <ReferenceLine x={0} stroke="#7890a2" />
-            <Bar dataKey="shapValue" radius={[2, 2, 2, 2]} animationDuration={550}>
-              {normalised.map((feature) => <Cell key={feature.name} fill={feature.direction === "risk" ? "#ff5a6f" : feature.direction === "protective" ? "#66f7a1" : "#718493"} />)}
+            <Bar dataKey="shapValue" radius={[4, 4, 4, 4]} minPointSize={4} animationDuration={400}>
+              {chart.rows.map((feature) => <Cell key={feature.name} fill={feature.direction === "risk" ? "#ff5e66" : feature.direction === "protective" ? "#c8ff5a" : "#9289a3"} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+        <ul className="sr-only">
+          {chart.rows.map((feature) => <li key={feature.name}>{feature.label}: observed value {feature.valueLabel}; SHAP impact {feature.impactLabel}; {feature.direction}.</li>)}
+        </ul>
       </div>
       <p className="risk-analytics__summary">{explanation.summary}</p>
-      {provenance && <p className="risk-analytics__summary"><code>{provenance.trainingData ?? "provenance unavailable"} · {provenance.calibrationMethod ?? "calibration unavailable"} · live outcomes {provenance.liveOutcomeCount ?? 0} · confidence {provenance.confidence == null ? "—" : `${(provenance.confidence * 100).toFixed(0)}%`} · drift {provenance.featureDrift ?? "—"} · OOD {String(provenance.outOfDistribution ?? false)} · {provenance.modelHash ?? ""}</code>{provenance.abstentionReasons?.length ? <span role="alert"> Quote withheld: {provenance.abstentionReasons.join(", ")}</span> : null}</p>}
-      <pre className="risk-analytics__json"><code>{JSON.stringify({
-        topRisks: explanation.topRisks,
-        protectiveTerms,
-      }, null, 2)}</code></pre>
+      <details className="model-evidence">
+        <summary>Model evidence</summary>
+        {provenance && <p className="risk-analytics__summary"><code>{provenance.trainingData ?? "provenance unavailable"} · {provenance.calibrationMethod ?? "calibration unavailable"} · live outcomes {provenance.liveOutcomeCount ?? 0} · confidence {provenance.confidence == null ? "—" : `${(provenance.confidence * 100).toFixed(0)}%`} · drift {provenance.featureDrift ?? "—"} · OOD {String(provenance.outOfDistribution ?? false)} · {provenance.modelHash ?? ""}</code>{provenance.abstentionReasons?.length ? <span role="alert"> Quote withheld: {provenance.abstentionReasons.join(", ")}</span> : null}</p>}
+        <pre className="risk-analytics__json"><code>{JSON.stringify({
+          topRisks: explanation.topRisks,
+          protectiveTerms,
+        }, null, 2)}</code></pre>
+      </details>
     </div>
   );
 }

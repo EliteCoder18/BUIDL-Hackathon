@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { buildSagaSteps } from "../components/dashboard/saga-model";
 import { calculateWaterfall } from "../components/policy/loss-waterfall-model";
-import { normaliseRiskFeatures } from "../components/risk/risk-model";
+import { normaliseRiskFeatures, riskChartModel } from "../components/risk/risk-model";
 
 test("saga rail marks completed, active, and future phases deterministically", () => {
   const steps = buildSagaSteps("CREDITCOIN_POLICY_LOCKED");
@@ -56,6 +56,24 @@ test("risk features preserve sign and normalise bar magnitude against the strong
   ]);
 });
 
+test("risk chart uses a symmetric domain and retains visible zero-impact rows", () => {
+  const model = riskChartModel([
+    { name: "failure_rate", value: 0.2, shapValue: 0.4 },
+    { name: "volatility_bps", value: 300, shapValue: 0 },
+    { name: "mean_slippage_bps", value: 50, shapValue: -0.2 },
+  ]);
+  assert.deepEqual(model.domain, [-0.4, 0.4]);
+  assert.equal(model.rows.length, 3);
+  assert.equal(model.rows[1].impactLabel, "0.000");
+  assert.equal(model.rows[1].valueLabel, "300");
+  assert.equal(model.rows[2].direction, "protective");
+});
+
+test("an all-zero risk chart retains a stable non-zero axis", () => {
+  const model = riskChartModel([{ name: "failure_rate", value: 0, shapValue: 0 }]);
+  assert.deepEqual(model.domain, [-0.05, 0.05]);
+});
+
 test("application shell uses the Eclipse orbital dock instead of the old sidebar", () => {
   const source = readFileSync(new URL("../components/ui/TechnicalShell.tsx", import.meta.url), "utf8");
   assert.match(source, /orbital-dock/);
@@ -74,11 +92,11 @@ test("cross-chain topology renders an eclipse, orbit rings, and distinct chain i
   assert.match(source, /Semi-implicit Euler/);
 });
 
-test("Eclipse typography keeps technical labels readable at small sizes", () => {
+test("Eclipse typography keeps technical labels at accessible sizes", () => {
   const source = readFileSync(new URL("../app/styles.css", import.meta.url), "utf8");
-  assert.match(source, /--micro-copy:\s*8px/);
-  assert.match(source, /--label-copy:\s*9px/);
-  assert.match(source, /--nav-copy:\s*10px/);
+  assert.match(source, /--micro-copy:\s*12px/);
+  assert.match(source, /--label-copy:\s*13px/);
+  assert.match(source, /--nav-copy:\s*14px/);
   assert.match(source, /\.metric-readout__label[^}]+var\(--label-copy\)/s);
   assert.match(source, /\.proof-rail__content code[^}]+var\(--micro-copy\)/s);
 });

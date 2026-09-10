@@ -15,6 +15,8 @@ export interface Quote {
 
 export interface RiskFeature {
   name: string;
+  value?: number;
+  label?: string;
   shapValue: number;
 }
 
