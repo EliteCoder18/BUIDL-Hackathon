@@ -14,7 +14,7 @@ export interface RiskAnalyticsPanelProps {
   probability?: number;
   modelVersion?: string;
   compact?: boolean;
-  provenance?: { trainingData?: string; calibrationMethod?: string; modelHash?: string; abstentionReasons?: string[]; liveOutcomeCount?: number; confidence?: number; featureDrift?: number; outOfDistribution?: boolean };
+  provenance?: { trainingData?: string; calibrationMethod?: string; modelHash?: string; abstentionReasons?: string[]; liveOutcomeCount?: number; confidence?: number; featureDrift?: number | null; outOfDistribution?: boolean };
 }
 
 export function RiskAnalyticsPanel({

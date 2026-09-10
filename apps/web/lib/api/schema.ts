@@ -50,7 +50,7 @@ export interface ApiRiskProfile {
   liveFeatures?: string;
   calibrationMethod?: string;
   dataLineage?: { datasetVersion: string; datasetHash: string; liveOutcomeCount: number };
-  diagnostics?: { abstentionReasons: string[]; warnings: string[]; confidence: number; featureDrift: number; outOfDistribution: boolean };
+  diagnostics?: { abstentionReasons: string[]; warnings: string[]; confidence: number; featureDrift: number | null; outOfDistribution: boolean };
 }
 
 export interface ApiQuote {
@@ -284,7 +284,7 @@ export function parseRiskProfile(value: unknown): ApiRiskProfile {
     liveFeatures: source.liveFeatures === undefined ? undefined : string(source.liveFeatures, "liveFeatures"),
     calibrationMethod: source.calibrationMethod === undefined ? undefined : string(source.calibrationMethod, "calibrationMethod"),
     dataLineage: lineage === undefined ? undefined : { datasetVersion: string(lineage.datasetVersion, "datasetVersion"), datasetHash: string(lineage.datasetHash, "datasetHash"), liveOutcomeCount: number(lineage.liveOutcomeCount, "liveOutcomeCount") },
-    diagnostics: diagnostics === undefined ? undefined : { abstentionReasons: stringArray(diagnostics.abstentionReasons, "abstentionReasons"), warnings: stringArray(diagnostics.warnings, "warnings"), confidence: number(diagnostics.confidence, "diagnostic confidence"), featureDrift: number(diagnostics.featureDrift, "featureDrift"), outOfDistribution: diagnostics.outOfDistribution === true },
+    diagnostics: diagnostics === undefined ? undefined : { abstentionReasons: stringArray(diagnostics.abstentionReasons, "abstentionReasons"), warnings: stringArray(diagnostics.warnings, "warnings"), confidence: number(diagnostics.confidence, "diagnostic confidence"), featureDrift: diagnostics.featureDrift === null ? null : number(diagnostics.featureDrift, "featureDrift"), outOfDistribution: diagnostics.outOfDistribution === true },
   };
 }
 
