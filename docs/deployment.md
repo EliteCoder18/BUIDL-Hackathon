@@ -52,6 +52,14 @@ The API also runs the same migration idempotently during startup, so deploying a
 
 ## 3. Create the Render services
 
+### Existing free-service deployment
+
+For a $0 prototype, reuse the existing Python `trustfutures-risk` web service. Keep the repository root and `master` branch, set the build command to `pip install -r services/ml/requirements.txt && npm ci`, and start with `node scripts/hosted.mjs`. Keep the Free compute plan and `/healthz` health check. Configure the API environment below, with `RISK_SERVICE_URL=http://127.0.0.1:8000`; the launcher also enforces this loopback URL. Use this existing service's public URL for Vercel's `NEXT_PUBLIC_API_URL`.
+
+This runs the Node API and Python risk model together, supervises both processes, and connects the API to Supabase. It does not start a paid proof worker: queued proof jobs will remain pending until a worker is run separately. Free service sleep and shared memory limits apply.
+
+### Separate-service deployment
+
 Create a Render Blueprint from the repository's `render.yaml`. It declares:
 
 - `trustfutures-api`, a public Node web service;
