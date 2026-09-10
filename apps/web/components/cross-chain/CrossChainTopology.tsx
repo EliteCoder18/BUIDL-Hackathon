@@ -7,7 +7,12 @@ import * as THREE from "three";
 import type { OrchestratorState } from "../../lib/trustfutures/orchestrator";
 
 type Vec3 = [number, number, number];
-type Props = { state: OrchestratorState };
+type TopologyEvidence = {
+  sepoliaTxHash?: string;
+  creditcoinTxHash?: string;
+  proofId?: string;
+};
+type Props = { state: OrchestratorState; evidence?: TopologyEvidence };
 
 const networks = {
   sepolia: { position: [-2.82, -0.12, 0.25] as Vec3, label: "SEPOLIA / 11155111", color: "#c8ff5a" },
@@ -188,7 +193,7 @@ function ParticleBeam({ route }: { route: Route | null }) {
   );
 }
 
-const Scene = memo(function Scene({ state }: Props) {
+const Scene = memo(function Scene({ state }: Pick<Props, "state">) {
   const route = activeRoute(state);
   return (
     <>
@@ -213,13 +218,28 @@ const Scene = memo(function Scene({ state }: Props) {
 });
 
 /** A WebGL DAG; state controls which inter-chain beam is physically in motion. */
-export const CrossChainTopology = memo(function CrossChainTopology({ state }: Props) {
+function shortReference(value: string) {
+  return value.length > 16 ? `${value.slice(0, 8)}…${value.slice(-6)}` : value;
+}
+
+export const CrossChainTopology = memo(function CrossChainTopology({ state, evidence }: Props) {
+  const references = [
+    evidence?.sepoliaTxHash && { network: "SEPOLIA", value: evidence.sepoliaTxHash },
+    evidence?.proofId && { network: "ATTESTCOIN", value: evidence.proofId },
+    evidence?.creditcoinTxHash && { network: "CREDITCOIN", value: evidence.creditcoinTxHash },
+  ].filter((reference): reference is { network: string; value: string } => Boolean(reference));
+
   return (
     <div className="topology-canvas topology-canvas--eclipse" role="img" aria-label={`Cross-chain topology. Current saga state: ${state}`}>
       <Canvas camera={{ position: [0, 0.55, 9.6], fov: 41 }} dpr={[1, 1.75]} gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}>
         <Scene state={state} />
       </Canvas>
       <span className="topology-state"><i /> SAGA / {state.replaceAll("_", " ")}</span>
+      {references.length > 0 && (
+        <div className="topology-evidence" aria-label="Confirmed transaction evidence">
+          {references.map((reference) => <span key={reference.network}><b>{reference.network}</b><code title={reference.value}>{shortReference(reference.value)}</code></span>)}
+        </div>
+      )}
       <span className="topology-instruction">DRAG TO ORBIT · SCROLL TO MAGNIFY</span>
     </div>
   );

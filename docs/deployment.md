@@ -77,6 +77,10 @@ Supply every Blueprint variable marked `sync: false` in the Render dashboard. Us
 | `RISK_SERVICE_URL` | Render URL for `trustfutures-risk`, with no trailing slash |
 | `CREDITCOIN_CHAIN_ID` | `102031` |
 | `POLICY_MANAGER_ADDRESS` | `creditcoin.policyManager` in `deployments/testnet.json` |
+| `TREASURY_JOB_MANAGER_ADDRESS` | `sepolia.treasuryJobManager` in `deployments/testnet.json` |
+| `TRUSTFUTURES_LIVE_WALLET` | `true` to verify browser-signed Sepolia mandates and issue live quotes |
+| `LIVE_AGENT_ID` | Registered ERC-8004 testnet agent accepted by the live quote route (currently `10130`) |
+| `SEPOLIA_RPC_URL` | Sepolia RPC used to verify the submitted mandate receipt |
 | `UNDERWRITER_CONSERVATIVE_PRIVATE_KEY` | Dedicated testnet signer |
 | `UNDERWRITER_BALANCED_PRIVATE_KEY` | A second dedicated testnet signer |
 | `UNDERWRITER_AGGRESSIVE_PRIVATE_KEY` | A third dedicated testnet signer |
@@ -111,8 +115,12 @@ Configure:
 | --- | --- |
 | `NEXT_PUBLIC_API_URL` | Public URL of `trustfutures-api`, with no trailing slash |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | WalletConnect project ID, when external wallet mode is required |
+| `NEXT_PUBLIC_SEPOLIA_RPC_URL` | Optional public browser RPC override; defaults to `https://rpc.sepolia.org` |
+| `NEXT_PUBLIC_CREDITCOIN_RPC_URL` | Optional public browser RPC override; defaults to the CC3 public RPC |
 
 No private key, RPC credential, database URL, OpenAI key, or Render secret belongs in Vercel's public environment.
+
+The header mode switch defaults to **Demo**. In **MetaMask** mode, the client signs mock-token mint and approval transactions plus `createJob` on Sepolia, then mint, approval, and `acceptQuote` on Creditcoin CC3. The Render API never receives a wallet private key: it verifies the mined Sepolia receipt and calldata before returning signed underwriter quotes.
 
 ## 5. Interconnect and smoke-check
 

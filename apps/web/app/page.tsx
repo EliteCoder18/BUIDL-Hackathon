@@ -16,7 +16,7 @@ function units(value?: string) {
 }
 
 export default function OperationsPage() {
-  const { api, state } = useCrossChainOrchestrator();
+  const { api, state, context } = useCrossChainOrchestrator();
   const [snapshot, setSnapshot] = useState<DemoStateResource>();
   const [vault, setVault] = useState<VaultResource>();
   const [error, setError] = useState("");
@@ -51,7 +51,14 @@ export default function OperationsPage() {
       <section className="observatory-stage" aria-label="Live network observatory">
         <div className="observatory-stage__coordinate observatory-stage__coordinate--left">CHAIN VECTOR 41.072°</div>
         <div className="observatory-stage__coordinate observatory-stage__coordinate--right">EPOCH 20·08·2026</div>
-        <CrossChainTopology state={state} />
+        <CrossChainTopology
+          state={state}
+          evidence={{
+            sepoliaTxHash: context.sepoliaTxHash,
+            creditcoinTxHash: context.creditcoinTxHash,
+            proofId: context.proofId ?? context.proofRequestId,
+          }}
+        />
 
         <div className="state-lens">
           <span>CURRENT SAGA VECTOR</span>
