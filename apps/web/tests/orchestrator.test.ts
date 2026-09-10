@@ -102,3 +102,13 @@ test("authoritative route state can hydrate the saga after a browser refresh", (
   assert.equal(actor.getSnapshot().value, "IDLE");
   actor.stop();
 });
+
+test("confirmed wallet receipts advance the shared topology without intermediate server events", () => {
+  const actor = createActor(crossChainOrchestrator).start();
+  actor.send({ type: "WALLET_TX_CONFIRMED", operation: "createJob", jobKey: JOB_KEY, txHash: "0xwallet-sepolia" });
+  assert.equal(actor.getSnapshot().value, "AUCTION_ACTIVE");
+  assert.equal(actor.getSnapshot().context.sepoliaTxHash, "0xwallet-sepolia");
+  actor.send({ type: "WALLET_TX_CONFIRMED", operation: "acceptQuote", txHash: "0xwallet-cc3", quoteId: "balanced-0", signature: "0xsigned" });
+  assert.equal(actor.getSnapshot().value, "CREDITCOIN_POLICY_LOCKED");
+  assert.equal(actor.getSnapshot().context.creditcoinTxHash, "0xwallet-cc3");
+});

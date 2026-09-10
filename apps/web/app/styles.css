@@ -302,6 +302,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .technical-form fieldset button.scenario-active, .scenario-toggle button.active { color: var(--lime); border-color: rgba(200,255,90,.38); background: rgba(200,255,90,.06); }
 .technical-form fieldset button.danger, .scenario-toggle button.danger { color: var(--coral); border-color: rgba(255,94,102,.38); background: rgba(255,94,102,.06); }
 .form-error { color: var(--coral); font-size: 12px; }
+.wallet-stepper { margin-top: 18px; padding: 18px; border: 1px solid rgba(169,150,255,.35); border-radius: 18px; background: rgba(11,7,17,.72); }
+.wallet-stepper > header { display: grid; gap: 5px; margin-bottom: 14px; }
+.wallet-stepper > header span { color: var(--lilac); font: 700 var(--micro-copy) ui-monospace, monospace; letter-spacing: .1em; }
+.wallet-stepper > header strong { font-size: 16px; }
+.wallet-stepper ol { margin: 0 0 16px; padding: 0; display: grid; gap: 7px; list-style: none; }
+.wallet-step { min-height: 56px; padding: 9px 12px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 13px; color: var(--muted); }
+.wallet-step > b { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 50%; font: 700 var(--micro-copy) ui-monospace, monospace; }
+.wallet-step span { display: grid; gap: 3px; }
+.wallet-step strong { color: inherit; font-size: 14px; }
+.wallet-step small { font: 600 12px ui-monospace, monospace; overflow-wrap: anywhere; }
+.wallet-step--active { color: var(--lilac); border-color: rgba(169,150,255,.5); background: rgba(169,150,255,.07); }
+.wallet-step--confirmed { color: var(--lime); }
 .spec-ledger { display: grid; margin-top: 14px; }
 .spec-ledger span { padding: 12px 0; border-bottom: 1px solid var(--line); color: #a79eaf; font: 600 8px ui-monospace, monospace; }
 .spec-ledger b { color: var(--lilac); margin-right: 10px; }

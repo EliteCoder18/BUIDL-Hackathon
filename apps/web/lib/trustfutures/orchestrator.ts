@@ -20,6 +20,8 @@ export type CrossChainEvent =
   | { type: "POLICY_LOCKED"; txHash: string }
   | { type: "START_PROOF"; requestId: string }
   | { type: "PROOF_SETTLED"; outcome: "success" | "slashed"; proofId: string }
+  | { type: "WALLET_TX_CONFIRMED"; operation: "createJob"; jobKey: Bytes32; txHash: string }
+  | { type: "WALLET_TX_CONFIRMED"; operation: "acceptQuote"; txHash: string; quoteId: string; signature: string }
   | { type: "HYDRATE"; state: OrchestratorState; context?: OrchestratorContext }
   | { type: "RESET" };
 
@@ -86,6 +88,8 @@ export const crossChainOrchestrator = setup({
     setPolicy: assign(({ event }) => event.type === "POLICY_LOCKED" ? { creditcoinTxHash: event.txHash } : {}),
     setProofRequest: assign(({ event }) => event.type === "START_PROOF" ? { proofRequestId: event.requestId } : {}),
     setProof: assign(({ event }) => event.type === "PROOF_SETTLED" ? { proofId: event.proofId } : {}),
+    setWalletMandate: assign(({ event }) => event.type === "WALLET_TX_CONFIRMED" && event.operation === "createJob" ? { jobKey: event.jobKey, sepoliaTxHash: event.txHash } : {}),
+    setWalletPolicy: assign(({ event }) => event.type === "WALLET_TX_CONFIRMED" && event.operation === "acceptQuote" ? { creditcoinTxHash: event.txHash, quoteId: event.quoteId, signature: event.signature } : {}),
     hydrate: assign(({ event }) => event.type === "HYDRATE" ? event.context ?? {} : {}),
     clear: assign(() => ({
       jobKey: undefined,
@@ -113,6 +117,10 @@ export const crossChainOrchestrator = setup({
       { guard: ({ event }) => event.state === "ATTESTCOIN_PROVING", target: ".ATTESTCOIN_PROVING", actions: ["clear", "hydrate"] },
       { guard: ({ event }) => event.state === "SETTLED_SUCCESS", target: ".SETTLED_SUCCESS", actions: ["clear", "hydrate"] },
       { target: ".SETTLED_SLASHED", actions: ["clear", "hydrate"] },
+    ],
+    WALLET_TX_CONFIRMED: [
+      { guard: ({ event }) => event.operation === "createJob", target: ".AUCTION_ACTIVE", actions: ["clear", "setWalletMandate"] },
+      { target: ".CREDITCOIN_POLICY_LOCKED", actions: "setWalletPolicy" },
     ],
   },
   states: {
