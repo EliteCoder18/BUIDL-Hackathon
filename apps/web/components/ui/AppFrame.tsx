@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState, type ReactNode } from "react";
-import { resolveWalletMode } from "../../lib/wallet/mode";
+import { useExecutionMode } from "../../app/execution-mode-provider";
+import { ExecutionModeControl } from "./ExecutionModeControl";
 import { TechnicalShell } from "./TechnicalShell";
 
 const ExternalWalletControl = dynamic(
@@ -12,7 +13,7 @@ const ExternalWalletControl = dynamic(
 
 export function AppFrame({ children }: { children: ReactNode }) {
   const [apiOnline, setApiOnline] = useState(false);
-  const walletMode = resolveWalletMode(process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID);
+  const { mode } = useExecutionMode();
   useEffect(() => {
     let active = true;
     const check = () => fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3001"}/healthz`)
@@ -22,8 +23,8 @@ export function AppFrame({ children }: { children: ReactNode }) {
     const timer = window.setInterval(check, 10_000);
     return () => { active = false; window.clearInterval(timer); };
   }, []);
-  const wallet = walletMode.kind === "external"
+  const wallet = mode === "wallet"
     ? <ExternalWalletControl />
-    : <span className="embedded-account"><i />EMBEDDED DEMO ACCOUNT</span>;
-  return <TechnicalShell apiOnline={apiOnline} modeLabel="LOCAL DIGITAL TWIN" walletControl={wallet}>{children}</TechnicalShell>;
+    : <span className="embedded-account"><i />DEMO ACCOUNT</span>;
+  return <TechnicalShell apiOnline={apiOnline} modeLabel={mode === "wallet" ? "PUBLIC TESTNET" : "EMBEDDED TWIN"} modeControl={<ExecutionModeControl />} walletControl={wallet}>{children}</TechnicalShell>;
 }

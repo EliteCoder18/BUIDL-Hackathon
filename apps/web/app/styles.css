@@ -107,6 +107,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .orbital-system__wallet { min-width: 0; }
 .embedded-account { min-height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 13px; border: 1px solid var(--line); border-radius: 13px; color: #c0b8ce; background: rgba(255,255,255,.025); font: 600 var(--label-copy) ui-monospace, monospace; letter-spacing: .08em; }
 .embedded-account i { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 12px var(--lime); }
+.execution-mode { display: flex; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.025); }
+.execution-mode button { min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; cursor: pointer; color: #aaa1b7; background: transparent; font: 700 10px ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.execution-mode button.is-active { color: #100b15; background: var(--lime); box-shadow: 0 0 20px rgba(200,255,90,.16); }
 
 .edge-coordinate { position: fixed; z-index: 10; left: 22px; top: 48%; display: flex; align-items: center; gap: 13px; transform: rotate(-90deg) translateX(-50%); transform-origin: left top; color: #655c72; font: 600 var(--label-copy) ui-monospace, monospace; letter-spacing: .2em; pointer-events: none; }
 .edge-coordinate span { color: var(--coral); }

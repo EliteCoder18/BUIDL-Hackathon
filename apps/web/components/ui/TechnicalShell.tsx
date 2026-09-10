@@ -15,6 +15,7 @@ const NAV_ITEMS = [
 export interface TechnicalShellProps {
   children: ReactNode;
   walletControl?: ReactNode;
+  modeControl?: ReactNode;
   apiOnline?: boolean;
   modeLabel?: string;
 }
@@ -22,6 +23,7 @@ export interface TechnicalShellProps {
 export function TechnicalShell({
   children,
   walletControl,
+  modeControl,
   apiOnline = true,
   modeLabel = "LOCAL TWIN",
 }: TechnicalShellProps) {
@@ -56,6 +58,7 @@ export function TechnicalShell({
         </nav>
 
         <div className="orbital-system">
+          {modeControl}
           <div className="orbital-system__state">
             <StatusChip label={apiOnline ? "SYNCHRONIZED" : "OFFLINE"} tone={apiOnline ? "success" : "danger"} pulse={apiOnline} />
             <span className="orbital-system__mode">{modeLabel}</span>
