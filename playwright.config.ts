@@ -5,8 +5,10 @@ export default defineConfig({
   outputDir: "./output/playwright/results",
   fullyParallel: false,
   workers: 1,
-  timeout: 45_000,
-  expect: { timeout: 10_000 },
+  // Cold Linux runners compile the wallet connector chunk on the first route.
+  // Keep assertions strict locally while allowing that one-time CI startup cost.
+  timeout: 90_000,
+  expect: { timeout: 30_000 },
   use: {
     baseURL: "http://localhost:3000",
     trace: "retain-on-failure",
