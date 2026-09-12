@@ -2,7 +2,7 @@
 
 import type { RiskFeature } from "../../lib/trustfutures/types";
 import { StatusChip } from "../ui/StatusChip";
-import { RiskAnalyticsPanel, type RiskExplanation } from "./RiskAnalyticsPanel";
+import { RiskAnalyticsPanel, type RiskExplanation, type RiskProvenance } from "./RiskAnalyticsPanel";
 
 export interface DisplayQuote {
   id: string;
@@ -16,6 +16,7 @@ export interface DisplayQuote {
   probability?: number;
   features: readonly RiskFeature[];
   explanation: RiskExplanation;
+  provenance?: RiskProvenance;
   strategy?: string;
 }
 
@@ -58,6 +59,7 @@ export function QuoteCard({ quote, selected = false, disabled = false, busy = fa
         explanation={quote.explanation}
         probability={quote.probability}
         modelVersion={quote.modelHash}
+        provenance={quote.provenance}
         compact
       />
       <footer className="quote-card__footer">
@@ -72,4 +74,3 @@ export function QuoteCard({ quote, selected = false, disabled = false, busy = fa
     </article>
   );
 }
-

@@ -105,3 +105,36 @@ test("read methods parse the API's plain resource responses", async () => {
     totalShares: "800000000",
   });
 });
+
+test("public market reads validate and preserve wallet policy history", async () => {
+  let requestedUrl = "";
+  const wallet = `0x${"44".repeat(20)}` as const;
+  const api = createTrustFuturesApi({
+    fetch: async (input) => {
+      requestedUrl = String(input);
+      return Response.json({
+        chainId: 102031,
+        activePolicyCount: 1,
+        confirmedProofCount: 2,
+        vault: { totalAssets: "814270000", reserved: "80000000", freeAssets: "734270000", totalShares: "800000000" },
+        policies: [{
+          policyId: `0x${"aa".repeat(32)}`,
+          jobKey: `0x${"bb".repeat(32)}`,
+          client: wallet,
+          underwriter: `0x${"66".repeat(20)}`,
+          coverageAmount: "100000000",
+          premiumAmount: "14270000",
+          state: "ACTIVE",
+          acceptedAt: "2026-09-12T10:40:00.000Z",
+          lockTxHash: `0x${"01".repeat(32)}`,
+        }],
+      });
+    },
+  });
+
+  const market = await api.getLiveMarket(wallet);
+
+  assert.equal(requestedUrl, `http://127.0.0.1:3001/v1/live/market?client=${wallet}`);
+  assert.equal(market.policies[0].state, "ACTIVE");
+  assert.equal(market.policies[0].premiumAmount, "14270000");
+});

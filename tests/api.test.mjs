@@ -73,10 +73,67 @@ test("live quote endpoint prices only a backend-verified Sepolia job", async () 
   assert.equal(body.job.jobKey, verifiedJob.jobKey);
   assert.deepEqual(body.domain, { chainId: 102031, verifyingContract: "0x0000000000000000000000000000000000001234" });
   assert.match(body.quotes[0].signature, /^0x[0-9a-f]{130}$/);
+  assert.match(body.quotes[0].validUntil, /^\d+$/);
+  assert.equal(typeof body.quotes[0].validUntil, "string");
+  assert.ok(body.quotes[0].riskProfile.features.length > 0);
+  assert.equal(typeof body.quotes[0].llmExplanation.summary, "string");
+  assert.ok(body.quotes[0].llmExplanation.summary.length > 0);
+});
+
+test("live quote nonces are stable for one job and unique across jobs", async () => {
+  const signer = createQuoteSigner({
+    chainId: 102031,
+    verifyingContract: "0x0000000000000000000000000000000000001234",
+    privateKeys: { conservative: `0x${"11".repeat(32)}`, balanced: `0x${"22".repeat(32)}`, aggressive: `0x${"33".repeat(32)}` },
+  });
+  const jobs = {
+    [`0x${"aa".repeat(32)}`]: { sourceTxHash: `0x${"aa".repeat(32)}`, jobKey: `0x${"44".repeat(32)}`, jobId: "7", agentId: "10130", amountIn: "100000000", minOut: "99000000", deadline: "2000000000" },
+    [`0x${"bb".repeat(32)}`]: { sourceTxHash: `0x${"bb".repeat(32)}`, jobKey: `0x${"55".repeat(32)}`, jobId: "8", agentId: "10130", amountIn: "100000000", minOut: "99000000", deadline: "2000000000" },
+  };
+  const api = createApi({
+    quoteSigner: signer,
+    riskClient: offlineRiskClient(),
+    liveJobVerifier: async (sourceTxHash) => jobs[sourceTxHash],
+    liveAgentHistory: () => history,
+    liveSigningDomain: { chainId: 102031, verifyingContract: "0x0000000000000000000000000000000000001234" },
+  });
+  const request = async (sourceTxHash) => {
+    const response = await api.handle(new Request("http://local/v1/live/quotes", { method: "POST", body: JSON.stringify({ sourceTxHash, coverageAmount: "100000000" }) }));
+    assert.equal(response.status, 200);
+    return response.json();
+  };
+
+  const first = await request(`0x${"aa".repeat(32)}`);
+  const second = await request(`0x${"bb".repeat(32)}`);
+  const retry = await request(`0x${"aa".repeat(32)}`);
+
+  assert.notEqual(first.quotes[2].nonce, second.quotes[2].nonce);
+  assert.equal(first.quotes[2].nonce, retry.quotes[2].nonce);
 });
 
 test("live quote endpoint fails closed without receipt verification and signers", async () => {
   const response = await createApi().handle(new Request("http://local/v1/live/quotes", { method: "POST", body: JSON.stringify({ sourceTxHash: `0x${"55".repeat(32)}`, coverageAmount: "100000000" }) }));
   assert.equal(response.status, 503);
   assert.equal((await response.json()).code, "LIVE_WALLET_UNAVAILABLE");
+});
+
+test("live market endpoint validates the wallet and returns public policy history", async () => {
+  const wallet = "0xdBF524a895026A67e48AD058277C8C287afF8e16";
+  let requestedWallet;
+  const payload = { chainId: 102031, activePolicyCount: 1, confirmedProofCount: 0, vault: { totalAssets: "800000000", reserved: "80000000", freeAssets: "720000000", totalShares: "800000000" }, policies: [] };
+  const api = createApi({ liveMarketReader: async (value) => { requestedWallet = value; return payload; } });
+
+  const response = await api.handle(new Request(`http://local/v1/live/market?client=${wallet.toLowerCase()}`));
+
+  assert.equal(response.status, 200);
+  assert.equal(requestedWallet, wallet);
+  assert.deepEqual(await response.json(), payload);
+  const invalid = await api.handle(new Request("http://local/v1/live/market?client=not-an-address"));
+  assert.equal(invalid.status, 400);
+});
+
+test("live market endpoint fails clearly when public-chain reads are unavailable", async () => {
+  const response = await createApi().handle(new Request("http://local/v1/live/market?client=0xdBF524a895026A67e48AD058277C8C287afF8e16"));
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).code, "LIVE_MARKET_UNAVAILABLE");
 });

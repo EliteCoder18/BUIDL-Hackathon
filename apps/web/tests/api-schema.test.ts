@@ -44,13 +44,51 @@ test("agent risk parser accepts unavailable feature drift from the deterministic
 });
 
 test("live quote parser preserves the verified job and Creditcoin signing domain", () => {
+  const riskProfile = {
+    failureProbabilityBps: 1234,
+    modelHash: `0x${"55".repeat(32)}`,
+    modelVersion: "trustfutures-gbm-v1",
+    confidence: 0.91,
+    abstain: false,
+    source: "python-risk-service",
+    features: [{ name: "failure_rate", value: 0.1, shapValue: 0.6, label: "Failure rate" }],
+    trainingData: "fixed-seed synthetic",
+    liveFeatures: "attested on-chain outcomes",
+    calibrationMethod: "isotonic",
+    dataLineage: { datasetVersion: "synthetic-mandates-v1", datasetHash: "sha256:fixture", liveOutcomeCount: 2 },
+    diagnostics: { confidence: 0.91, featureDrift: 0.02, outOfDistribution: false, abstentionReasons: [], warnings: [] },
+  };
   const body = parseLiveQuotes({
     job: { sourceTxHash: `0x${"11".repeat(32)}`, jobKey: `0x${"22".repeat(32)}`, jobId: "7", agentId: "10130", amountIn: "100", minOut: "99", deadline: "2000000000" },
     domain: { chainId: 102031, verifyingContract: `0x${"33".repeat(20)}` },
     signing: "EIP-712 signed",
-    quotes: [{ jobKey: `0x${"22".repeat(32)}`, underwriter: `0x${"44".repeat(20)}`, coverageAmount: "100", premiumAmount: "10", juniorAmount: "20", validUntil: "2000000000", modelHash: `0x${"55".repeat(32)}`, nonce: "0", signature: `0x${"66".repeat(65)}`, strategy: "balanced" }],
+    quotes: [{
+      jobKey: `0x${"22".repeat(32)}`,
+      underwriter: `0x${"44".repeat(20)}`,
+      coverageAmount: "900000000",
+      premiumAmount: "111060000",
+      juniorAmount: "180000000",
+      seniorAmount: "720000000",
+      validUntil: "2000000000",
+      modelHash: `0x${"55".repeat(32)}`,
+      nonce: "0",
+      signature: `0x${"66".repeat(65)}`,
+      strategy: "balanced",
+      failureProbabilityBps: 1234,
+      premiumBps: 1234,
+      factors: riskProfile.features,
+      riskProfile,
+      llmExplanation: { summary: "Model prices the verified mandate.", topRisks: ["failure_rate"], protectiveTerms: ["20% first-loss"] },
+    }],
   });
   assert.equal(body.domain.chainId, 102031);
   assert.equal(body.job.agentId, "10130");
-  assert.equal(body.quotes[0].premiumAmount, "10");
+  assert.equal(body.quotes[0].premiumAmount, "111060000");
+  assert.equal(body.quotes[0].failureProbabilityBps, 1234);
+  assert.equal(body.quotes[0].riskProfile.features[0].name, "failure_rate");
+  assert.equal(body.quotes[0].riskProfile.confidence, 0.91);
+  assert.equal(body.quotes[0].riskProfile.calibrationMethod, "isotonic");
+  assert.equal(body.quotes[0].riskProfile.diagnostics?.featureDrift, 0.02);
+  assert.equal(body.quotes[0].riskProfile.dataLineage?.liveOutcomeCount, 2);
+  assert.equal(body.quotes[0].llmExplanation.summary, "Model prices the verified mandate.");
 });

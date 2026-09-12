@@ -306,6 +306,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .technical-form fieldset button.scenario-active, .scenario-toggle button.active { color: var(--lime); border-color: rgba(200,255,90,.38); background: rgba(200,255,90,.06); }
 .technical-form fieldset button.danger, .scenario-toggle button.danger { color: var(--coral); border-color: rgba(255,94,102,.38); background: rgba(255,94,102,.06); }
 .form-error { color: var(--coral); font-size: 12px; }
+.wallet-recovery { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
 .wallet-stepper { margin-top: 18px; padding: 18px; border: 1px solid rgba(169,150,255,.35); border-radius: 18px; background: rgba(11,7,17,.72); }
 .wallet-stepper > header { display: grid; gap: 5px; margin-bottom: 14px; }
 .wallet-stepper > header span { color: var(--lilac); font: 700 var(--micro-copy) ui-monospace, monospace; letter-spacing: .1em; }
@@ -379,6 +380,26 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .distribution-ring strong { font: 500 38px ui-monospace, monospace; }
 .distribution-ring span { margin-top: 7px; color: var(--muted); font: 700 var(--label-copy) ui-monospace, monospace; }
 
+.policy-history { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.policy-history__item { overflow: hidden; border: 1px solid var(--line); border-radius: 22px 8px 22px 8px; background: rgba(8,5,14,.52); }
+.policy-history__item > header { min-height: 66px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); }
+.policy-history__item > header > div { min-width: 0; display: grid; gap: 5px; }
+.policy-history__item > header small, .policy-history dt { color: var(--muted); font: 700 var(--label-copy) ui-monospace, monospace; letter-spacing: .08em; }
+.policy-history__item > header code { overflow: hidden; color: var(--lilac); font: 700 14px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.policy-history__item dl { margin: 0; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); }
+.policy-history__item dl > div { min-width: 0; padding: 15px 18px; border-right: 1px solid var(--line); }
+.policy-history__item dl > div:last-child { border-right: 0; }
+.policy-history__item dd { margin: 7px 0 0; overflow: hidden; color: #f5f0ff; font: 600 14px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.policy-history__item dd small { color: var(--muted); font-size: var(--micro-copy); }
+.policy-history__item > footer { min-height: 48px; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid var(--line); color: var(--muted); font: 700 var(--micro-copy) ui-monospace, monospace; }
+.policy-history__item > footer code { color: #a69bc0; }
+.policy-history__links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 16px; }
+.policy-history__links a { min-height: 44px; display: inline-flex; align-items: center; color: var(--lime); }
+.policy-history__links a:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; border-radius: 4px; }
+.policy-history-empty { min-height: 150px; display: grid; place-content: center; gap: 8px; text-align: center; color: var(--muted); }
+.policy-history-empty strong { color: var(--lilac); font: 700 var(--label-copy) ui-monospace, monospace; letter-spacing: .12em; }
+.policy-history-empty span { font-size: 15px; }
+
 @keyframes signal { 0% { box-shadow: 0 0 0 0 currentColor; } 70% { box-shadow: 0 0 0 7px transparent; } }
 @keyframes orbit { to { transform: rotate(360deg); } }
 @keyframes flashRed { 50% { background: #8c1527; box-shadow: inset 0 0 40px var(--coral); } }
@@ -451,6 +472,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .loss-waterfall__order { margin-left: 0; }
   .settlement-report { align-items: flex-start; flex-direction: column; }
   .settlement-report a { margin-left: 0; }
+  .policy-history__item dl { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .policy-history__item dl > div:nth-child(2) { border-right: 0; }
+  .policy-history__item dl > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .policy-history__item > footer { align-items: flex-start; flex-direction: column; }
+  .policy-history__links { justify-content: flex-start; }
 }
 
 @media (max-width: 440px) {
@@ -462,6 +488,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .route-actions .status-chip { max-width: 122px; overflow: hidden; }
   .technical-panel__body { padding: 16px; }
   .agent-orb { width: 74px; height: 74px; }
+  .policy-history__item > header { align-items: flex-start; flex-direction: column; }
+  .policy-history__item dl { grid-template-columns: 1fr; }
+  .policy-history__item dl > div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .policy-history__item dl > div:last-child { border-bottom: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

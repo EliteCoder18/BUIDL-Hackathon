@@ -6,15 +6,12 @@ import { QuoteAuctionGrid } from "../../../components/risk/QuoteAuctionGrid";
 import type { DisplayQuote } from "../../../components/risk/QuoteCard";
 import { StatusChip } from "../../../components/ui/StatusChip";
 import { TechnicalPanel } from "../../../components/ui/TechnicalPanel";
-import type { ApiQuote, AuctionResource, LiveQuote, LiveQuotesResource } from "../../../lib/api";
+import type { AuctionResource, LiveQuote, LiveQuotesResource } from "../../../lib/api";
 import { useCrossChainOrchestrator } from "../../../lib/orchestration";
+import { quoteToDisplay } from "../../../lib/risk/quote-display";
 import type { Bytes32 } from "../../../lib/trustfutures/types";
 import { useExecutionMode } from "../../execution-mode-provider";
 import { WalletPolicyFlow } from "../../../components/wallet/WalletPolicyFlow";
-
-function toDisplay(quote: ApiQuote, index: number): DisplayQuote {
-  return { id: `${index}:${quote.strategy}`, underwriter: quote.underwriter, coverageAmount: Number(quote.coverageAmount) / 1e6, premiumAmount: Number(quote.premiumAmount) / 1e6, juniorAmount: Number(quote.juniorAmount) / 1e6, validUntil: quote.validUntil, modelHash: quote.modelHash, nonce: quote.nonce, probability: quote.failureProbabilityBps / 10_000, features: quote.riskProfile.features, explanation: quote.llmExplanation, strategy: quote.strategy };
-}
 
 export default function QuoteAuctionPage({ params }: { params: { jobKey: string } }) {
   const jobKey = params.jobKey as Bytes32;
@@ -35,7 +32,7 @@ export default function QuoteAuctionPage({ params }: { params: { jobKey: string 
     }
     api.getQuotes(jobKey).then((value) => { setAuction(value); send({ type: "HYDRATE", state: "AUCTION_ACTIVE", context: { jobKey } }); }).catch((cause) => setError(cause instanceof Error ? cause.message : "Quote auction unavailable"));
   }, [api, jobKey, mode, send]);
-  const displayQuotes = useMemo(() => mode === "wallet" ? live?.quotes.map((quote, index) => ({ id: `${index}:${quote.strategy}`, underwriter: quote.underwriter, coverageAmount: Number(quote.coverageAmount) / 1e6, premiumAmount: Number(quote.premiumAmount) / 1e6, juniorAmount: Number(quote.juniorAmount) / 1e6, validUntil: quote.validUntil, modelHash: quote.modelHash, nonce: quote.nonce, features: [], explanation: { summary: "Receipt-verified mandate priced by a server-side underwriter.", topRisks: [], protectiveTerms: ["20% first-loss", "Verified Sepolia receipt"] }, strategy: quote.strategy })) ?? [] : auction?.quotes.map(toDisplay) ?? [], [auction, live, mode]);
+  const displayQuotes = useMemo(() => mode === "wallet" ? live?.quotes.map(quoteToDisplay) ?? [] : auction?.quotes.map(quoteToDisplay) ?? [], [auction, live, mode]);
   async function accept(selected: DisplayQuote) {
     const quoteIndex = Number(selected.id.split(":")[0]); setBusy(selected.id); setError("");
     if (mode === "wallet") { setLiveQuote(live?.quotes[quoteIndex]); setBusy(""); return; }

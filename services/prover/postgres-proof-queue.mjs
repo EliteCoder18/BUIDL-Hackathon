@@ -2,9 +2,18 @@ import pg from "pg";
 
 const { Pool } = pg;
 
+function reportPoolError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`[proof-queue] idle PostgreSQL client error: ${message}`);
+}
+
 /// Durable queue used by the API/worker in Railway. Same idempotency contract as ProofQueue.
 export class PostgresProofQueue {
-  constructor(connectionString, { pool } = {}) { this.pool = pool ?? new Pool({ connectionString }); }
+  constructor(connectionString, { pool, onPoolError = reportPoolError } = {}) {
+    this.pool = pool ?? new Pool({ connectionString });
+    this.onPoolError = onPoolError;
+    this.pool.on?.("error", this.onPoolError);
+  }
 
   async migrate() {
     await this.pool.query("CREATE EXTENSION IF NOT EXISTS pgcrypto");
@@ -83,5 +92,8 @@ export class PostgresProofQueue {
     return result.rows[0];
   }
 
-  async close() { await this.pool.end(); }
+  async close() {
+    await this.pool.end();
+    this.pool.off?.("error", this.onPoolError);
+  }
 }

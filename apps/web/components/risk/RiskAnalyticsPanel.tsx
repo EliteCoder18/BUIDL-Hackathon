@@ -8,13 +8,30 @@ export interface RiskExplanation {
   protectiveTerms: readonly string[] | string;
 }
 
+export interface RiskProvenance {
+  source?: string;
+  modelVersion?: string;
+  trainingData?: string;
+  liveFeatures?: string;
+  calibrationMethod?: string;
+  modelHash?: string;
+  datasetVersion?: string;
+  datasetHash?: string;
+  abstentionReasons?: string[];
+  warnings?: string[];
+  liveOutcomeCount?: number;
+  confidence?: number;
+  featureDrift?: number | null;
+  outOfDistribution?: boolean;
+}
+
 export interface RiskAnalyticsPanelProps {
   features: readonly RiskFeature[];
   explanation: RiskExplanation;
   probability?: number;
   modelVersion?: string;
   compact?: boolean;
-  provenance?: { trainingData?: string; calibrationMethod?: string; modelHash?: string; abstentionReasons?: string[]; liveOutcomeCount?: number; confidence?: number; featureDrift?: number | null; outOfDistribution?: boolean };
+  provenance?: RiskProvenance;
 }
 
 export function RiskAnalyticsPanel({
@@ -54,8 +71,11 @@ export function RiskAnalyticsPanel({
       <p className="risk-analytics__summary">{explanation.summary}</p>
       <details className="model-evidence">
         <summary>Model evidence</summary>
-        {provenance && <p className="risk-analytics__summary"><code>{provenance.trainingData ?? "provenance unavailable"} · {provenance.calibrationMethod ?? "calibration unavailable"} · live outcomes {provenance.liveOutcomeCount ?? 0} · confidence {provenance.confidence == null ? "—" : `${(provenance.confidence * 100).toFixed(0)}%`} · drift {provenance.featureDrift ?? "—"} · OOD {String(provenance.outOfDistribution ?? false)} · {provenance.modelHash ?? ""}</code>{provenance.abstentionReasons?.length ? <span role="alert"> Quote withheld: {provenance.abstentionReasons.join(", ")}</span> : null}</p>}
+        <p className="risk-analytics__summary">These analytics accompany the EIP-712 quote; they are not independently signed. The canonical quote&apos;s model hash identifies the model evidence.</p>
+        {provenance && <p className="risk-analytics__summary"><code>{provenance.source ?? "source unavailable"} · {provenance.modelVersion ?? "model unavailable"} · {provenance.trainingData ?? "provenance unavailable"} · {provenance.liveFeatures ?? "live evidence unavailable"} · {provenance.calibrationMethod ?? "calibration unavailable"} · dataset {provenance.datasetVersion ?? "—"} · live outcomes {provenance.liveOutcomeCount ?? 0} · confidence {provenance.confidence == null ? "—" : `${(provenance.confidence * 100).toFixed(0)}%`} · drift {provenance.featureDrift ?? "—"} · OOD {String(provenance.outOfDistribution ?? false)} · {provenance.modelHash ?? ""}</code>{provenance.abstentionReasons?.length ? <span role="alert"> Quote withheld: {provenance.abstentionReasons.join(", ")}</span> : null}</p>}
         <pre className="risk-analytics__json"><code>{JSON.stringify({
+          datasetHash: provenance?.datasetHash,
+          warnings: provenance?.warnings,
           topRisks: explanation.topRisks,
           protectiveTerms,
         }, null, 2)}</code></pre>

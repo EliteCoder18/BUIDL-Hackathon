@@ -81,17 +81,8 @@ export interface AuctionResource {
   quotes: ApiQuote[];
 }
 
-export interface LiveQuote {
-  jobKey: Bytes32;
-  underwriter: Address;
-  coverageAmount: IntegerString;
-  premiumAmount: IntegerString;
-  juniorAmount: IntegerString;
-  validUntil: IntegerString;
-  modelHash: Bytes32;
-  nonce: IntegerString;
+export interface LiveQuote extends ApiQuote {
   signature: `0x${string}`;
-  strategy: "conservative" | "balanced" | "aggressive";
 }
 
 export interface LiveQuotesResource {
@@ -99,6 +90,30 @@ export interface LiveQuotesResource {
   domain: { chainId: 102031; verifyingContract: Address };
   signing: string;
   quotes: LiveQuote[];
+}
+
+export type LivePolicyState = "ACTIVE" | "SETTLED_SUCCESS" | "SETTLED_FAILURE";
+
+export interface LivePolicyHistoryItem {
+  policyId: Bytes32;
+  jobKey: Bytes32;
+  client: Address;
+  underwriter: Address;
+  coverageAmount: IntegerString;
+  premiumAmount: IntegerString;
+  state: LivePolicyState;
+  acceptedAt: string;
+  lockTxHash: Bytes32;
+  settlementTxHash?: Bytes32;
+  clientPayout?: IntegerString;
+}
+
+export interface LiveMarketResource {
+  chainId: 102031;
+  activePolicyCount: number;
+  confirmedProofCount: number;
+  vault: VaultResource;
+  policies: LivePolicyHistoryItem[];
 }
 
 export interface PolicyResource {
@@ -209,21 +224,8 @@ export function parseLiveQuotes(value: unknown): LiveQuotesResource {
   if (domain.chainId !== 102031) throw new TypeError("invalid live signing chain");
   if (!Array.isArray(source.quotes)) throw new TypeError("invalid live quotes");
   const quotes = source.quotes.map((value, index): LiveQuote => {
-    const quote = record(value, `live quote[${index}]`);
-    const strategy = string(quote.strategy, "live quote strategy");
-    if (strategy !== "conservative" && strategy !== "balanced" && strategy !== "aggressive") throw new TypeError("invalid live quote strategy");
-    return {
-      jobKey: bytes(quote.jobKey, 32, "live quote jobKey"),
-      underwriter: bytes(quote.underwriter, 20, "live quote underwriter") as Address,
-      coverageAmount: integerString(quote.coverageAmount, "live quote coverageAmount"),
-      premiumAmount: integerString(quote.premiumAmount, "live quote premiumAmount"),
-      juniorAmount: integerString(quote.juniorAmount, "live quote juniorAmount"),
-      validUntil: integerString(quote.validUntil, "live quote validUntil"),
-      modelHash: bytes(quote.modelHash, 32, "live quote modelHash"),
-      nonce: integerString(quote.nonce, "live quote nonce"),
-      signature: bytes(quote.signature, 65, "live quote signature"),
-      strategy,
-    };
+    const parsed = parseQuote(value);
+    return { ...parsed, signature: bytes(parsed.signature, 65, `live quote[${index}] signature`) };
   });
   return {
     job: {
@@ -238,6 +240,39 @@ export function parseLiveQuotes(value: unknown): LiveQuotesResource {
     domain: { chainId: 102031, verifyingContract: bytes(domain.verifyingContract, 20, "verifyingContract") as Address },
     signing: string(source.signing, "live quote signing"),
     quotes,
+  };
+}
+
+export function parseLiveMarket(value: unknown): LiveMarketResource {
+  const source = record(value, "live market");
+  if (source.chainId !== 102031) throw new TypeError("invalid live market chain");
+  if (!Array.isArray(source.policies)) throw new TypeError("invalid live market policies");
+  const policies = source.policies.map((value): LivePolicyHistoryItem => {
+    const policy = record(value, "live policy");
+    const state = string(policy.state, "live policy state");
+    if (state !== "ACTIVE" && state !== "SETTLED_SUCCESS" && state !== "SETTLED_FAILURE") throw new TypeError("invalid live policy state");
+    const acceptedAt = string(policy.acceptedAt, "acceptedAt");
+    if (Number.isNaN(Date.parse(acceptedAt))) throw new TypeError("invalid acceptedAt");
+    return {
+      policyId: bytes(policy.policyId, 32, "live policyId"),
+      jobKey: bytes(policy.jobKey, 32, "live jobKey"),
+      client: bytes(policy.client, 20, "live policy client") as Address,
+      underwriter: bytes(policy.underwriter, 20, "live underwriter") as Address,
+      coverageAmount: integerString(policy.coverageAmount, "live coverageAmount"),
+      premiumAmount: integerString(policy.premiumAmount, "live premiumAmount"),
+      state,
+      acceptedAt,
+      lockTxHash: bytes(policy.lockTxHash, 32, "live lockTxHash"),
+      settlementTxHash: policy.settlementTxHash === undefined ? undefined : bytes(policy.settlementTxHash, 32, "live settlementTxHash"),
+      clientPayout: policy.clientPayout === undefined ? undefined : integerString(policy.clientPayout, "live clientPayout"),
+    };
+  });
+  return {
+    chainId: 102031,
+    activePolicyCount: number(source.activePolicyCount, "activePolicyCount"),
+    confirmedProofCount: number(source.confirmedProofCount, "confirmedProofCount"),
+    vault: parseVault(source.vault),
+    policies,
   };
 }
 

@@ -85,3 +85,18 @@ def test_cold_start_without_an_attested_event_is_not_an_invalid_event():
     })
 
     assert "invalid-or-stale-attested-event" not in result["diagnostics"]["abstentionReasons"]
+
+
+def test_unseen_agent_identity_is_a_warning_not_an_abstention_reason():
+    result = score_risk({
+        **STRONG_FEATURES,
+        "agent_id": "10130",
+        "mandate_category": "swap",
+        "coverage_size": 100_000,
+        "live_outcome_count": 0,
+        "attested_event_valid": False,
+    })
+
+    assert result["abstain"] is False
+    assert "unknown-agent" not in result["diagnostics"]["abstentionReasons"]
+    assert "unseen-agent-identity" in result["diagnostics"]["warnings"]

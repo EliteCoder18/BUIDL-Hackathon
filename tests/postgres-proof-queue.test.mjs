@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import test from "node:test";
 
 import { PostgresProofQueue } from "../services/prover/postgres-proof-queue.mjs";
 
-class RecordingPool {
+class RecordingPool extends EventEmitter {
   queries = [];
   rows = [];
   closed = false;
@@ -15,6 +16,15 @@ class RecordingPool {
 
   async end() { this.closed = true; }
 }
+
+test("idle PostgreSQL client errors are observed without crashing the API process", () => {
+  const pool = new RecordingPool();
+  const observed = [];
+  new PostgresProofQueue("postgresql://unused", { pool, onPoolError: (error) => observed.push(error.message) });
+
+  assert.doesNotThrow(() => pool.emit("error", new Error("transient socket failure")));
+  assert.deepEqual(observed, ["transient socket failure"]);
+});
 
 test("claimNext atomically locks one eligible Supabase job and maps retry metadata", async () => {
   const pool = new RecordingPool();

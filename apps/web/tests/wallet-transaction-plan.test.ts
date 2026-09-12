@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { walletTransactionPlan } from "../lib/wallet/transaction-plan";
 import { reduceWalletTransaction } from "../lib/wallet/transaction-state";
+import { nextMandateAction, parsePendingMandate, parseRecoveryTransactionHash, verifiedMandateKey } from "../lib/wallet/mandate-recovery";
 
 const address = (byte: string) => `0x${byte.repeat(40)}` as `0x${string}`;
 
@@ -35,4 +36,42 @@ test("a confirmed receipt records public transaction evidence", () => {
   assert.deepEqual(reduceWalletTransaction({ stage: "confirming", hash: `0x${"a".repeat(64)}` }, { type: "CONFIRMED", blockNumber: 42n }), {
     stage: "confirmed", hash: `0x${"a".repeat(64)}`, blockNumber: 42n,
   });
+});
+
+test("a confirmed mandate retries quote hydration instead of sending createJob again", () => {
+  assert.equal(nextMandateAction(2, undefined), "create-job");
+  assert.equal(nextMandateAction(2, {
+    jobKey: `0x${"a".repeat(64)}`,
+    txHash: `0x${"b".repeat(64)}`,
+  }), "request-quotes");
+});
+
+test("a confirmed mandate can be restored after a page refresh", () => {
+  const pending = {
+    jobKey: `0x${"a".repeat(64)}` as `0x${string}`,
+    txHash: `0x${"b".repeat(64)}` as `0x${string}`,
+    input: {
+      agentId: "10130",
+      amountIn: "100000000",
+      minOut: "99000000",
+      coverageAmount: "100000000",
+      deadlineSeconds: 3600,
+      deadline: "2000000000",
+    },
+  };
+  assert.deepEqual(parsePendingMandate(JSON.stringify(pending)), pending);
+  assert.equal(parsePendingMandate("not-json"), undefined);
+});
+
+test("receipt-verified server job key is canonical during recovery", () => {
+  assert.equal(verifiedMandateKey(
+    `0x${"a".repeat(64)}`,
+    `0x${"c".repeat(64)}`,
+  ), `0x${"c".repeat(64)}`);
+});
+
+test("manual mandate recovery accepts only a transaction hash", () => {
+  const hash = `0x${"d".repeat(64)}`;
+  assert.equal(parseRecoveryTransactionHash(hash), hash);
+  assert.throws(() => parseRecoveryTransactionHash("0x1234"), /transaction hash/i);
 });

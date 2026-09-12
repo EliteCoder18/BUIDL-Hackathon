@@ -1,5 +1,5 @@
 import type { CrossChainEvent } from "../trustfutures/orchestrator";
-import type { Bytes32 } from "../trustfutures/types";
+import type { Address, Bytes32 } from "../trustfutures/types";
 import {
   parseAgentRisk,
   parseAgents,
@@ -8,6 +8,7 @@ import {
   parseDemoState,
   parseJob,
   parseLiveQuotes,
+  parseLiveMarket,
   parsePolicy,
   parseProof,
   parseVault,
@@ -18,6 +19,7 @@ import {
   type DemoStateResource,
   type JobResource,
   type LiveQuotesResource,
+  type LiveMarketResource,
   type PolicyResource,
   type ProofResource,
   type VaultResource,
@@ -105,6 +107,7 @@ export function createTrustFuturesApi(options: TrustFuturesApiOptions = {}) {
     proveOutcome: (jobKey: Bytes32) => command("/v1/proofs", parseProof, { jobKey }),
     settlePolicy: (policyId: Bytes32) => command(`/v1/policies/${policyId}/settle`, parsePolicy, {}),
     getLiveQuotes: (sourceTxHash: `0x${string}`, coverageAmount: `${bigint}`): Promise<LiveQuotesResource> => request("/v1/live/quotes", parseLiveQuotes, { method: "POST", body: JSON.stringify({ sourceTxHash, coverageAmount }) }),
+    getLiveMarket: (client: Address): Promise<LiveMarketResource> => request(`/v1/live/market?client=${encodeURIComponent(client)}`, parseLiveMarket),
   };
 }
 
@@ -116,6 +119,7 @@ export type {
   DemoStateResource,
   JobResource,
   LiveQuotesResource,
+  LiveMarketResource,
   PolicyResource,
   ProofResource,
   VaultResource,

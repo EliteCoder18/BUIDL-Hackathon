@@ -1,3 +1,5 @@
+import React from "react";
+
 export type StatusTone = "neutral" | "live" | "success" | "warning" | "danger" | "cyan";
 
 export interface StatusChipProps {
