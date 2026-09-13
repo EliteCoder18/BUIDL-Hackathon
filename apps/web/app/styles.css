@@ -594,7 +594,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 @media (max-width: 1120px) {
   .orbital-dock { width: calc(100vw - 58px); grid-template-columns: auto 1fr auto; }
-  .orbital-brand small { display: none; }
+  .orbital-brand small, .orbital-brand__wordmark { display: none; }
   .eclipse-workspace { width: calc(100vw - 80px); }
   .dashboard-grid--topology, .dashboard-grid--policy, .form-layout, .observatory-lower-grid { grid-template-columns: 1fr; }
   .quote-auction-grid { grid-template-columns: 1fr; }
