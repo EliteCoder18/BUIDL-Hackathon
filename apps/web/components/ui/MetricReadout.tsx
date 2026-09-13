@@ -4,15 +4,17 @@ export interface MetricReadoutProps {
   label: string;
   value: ReactNode;
   detail?: ReactNode;
+  explanation?: string;
   tone?: "default" | "green" | "cyan" | "amber" | "red";
 }
 
-export function MetricReadout({ label, value, detail, tone = "default" }: MetricReadoutProps) {
+export function MetricReadout({ label, value, detail, explanation, tone = "default" }: MetricReadoutProps) {
   return (
     <div className={`satellite-readout metric-readout metric-readout--${tone}`}>
       <span className="metric-readout__label">{label}</span>
       <strong className="metric-readout__value">{value}</strong>
       {detail && <span className="metric-readout__detail">{detail}</span>}
+      {explanation && <span className="metric-readout__explanation">{explanation}</span>}
     </div>
   );
 }

@@ -26,5 +26,5 @@ export function AppFrame({ children }: { children: ReactNode }) {
   const wallet = mode === "wallet"
     ? <ExternalWalletControl />
     : <span className="embedded-account"><i />DEMO ACCOUNT</span>;
-  return <TechnicalShell apiOnline={apiOnline} modeLabel={mode === "wallet" ? "PUBLIC TESTNET" : "EMBEDDED TWIN"} modeControl={<ExecutionModeControl />} walletControl={wallet}>{children}</TechnicalShell>;
+  return <TechnicalShell apiOnline={apiOnline} modeLabel={mode === "wallet" ? "PUBLIC TESTNET" : "EMBEDDED TWIN"} journeyScope={mode} modeControl={<ExecutionModeControl />} walletControl={wallet}>{children}</TechnicalShell>;
 }

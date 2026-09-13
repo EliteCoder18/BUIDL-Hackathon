@@ -28,6 +28,10 @@ test("success saga confirms a local proof, releases capital, and splits premium"
   const saga = createDemoSaga(runtime, { riskClient: offlineRiskClient() });
   const { job, policy } = await createPolicy(saga);
 
+  const lockedState = saga.getState();
+  assert.equal(lockedState.chainHeads.sepolia, job.transactions[0].blockNumber);
+  assert.equal(lockedState.chainHeads.creditcoin, policy.transactions[0].blockNumber);
+
   const executed = await saga.executeJob(job.data.jobKey, "success");
   const proof = await saga.proveOutcome(job.data.jobKey);
   const settled = await saga.settlePolicy(policy.data.policyId);

@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseAgentRisk, parseLiveQuotes } from "../lib/api/schema";
+import { parseAgentRisk, parseDemoState, parseLiveQuotes } from "../lib/api/schema";
+
+test("demo state preserves confirmed chain heads for operations telemetry", () => {
+  const state = parseDemoState({
+    agents: [], jobs: [], policies: [], proofs: [],
+    chainHeads: { sepolia: 41, creditcoin: "82" },
+  });
+
+  assert.deepEqual(state.chainHeads, { sepolia: 41, creditcoin: "82" });
+});
 
 test("agent risk parser accepts unavailable feature drift from the deterministic fallback", () => {
   const risk = parseAgentRisk({

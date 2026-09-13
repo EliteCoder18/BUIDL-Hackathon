@@ -27,6 +27,7 @@ export class DemoStore {
     this.quotes = new Map();
     this.policies = new Map();
     this.proofs = new Map();
+    this.chainHeads = {};
     return this.snapshot();
   }
 
@@ -64,12 +65,17 @@ export class DemoStore {
 
   liveOutcomeCount(agentId) { return this.ledger.events.filter((event) => event.agentId === String(agentId)).length; }
 
+  recordTransaction({ chain, blockNumber }) {
+    this.chainHeads[chain] = blockNumber;
+  }
+
   snapshot() {
     return {
       agents: [...this.agents.values()],
       jobs: [...this.jobs.values()],
       policies: [...this.policies.values()],
       proofs: [...this.proofs.values()],
+      chainHeads: { ...this.chainHeads },
       attestedMandates: this.ledger.events,
     };
   }

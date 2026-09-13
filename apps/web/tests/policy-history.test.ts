@@ -40,3 +40,17 @@ test("policy history does not round tiny non-zero testnet amounts to zero", () =
   assert.match(html, /0\.0009/);
   assert.match(html, /0\.00007/);
 });
+
+test("policy history distinguishes active and settled records and labels local time", () => {
+  const settled = {
+    ...policy,
+    policyId: `0x${"cc".repeat(32)}`,
+    state: "SETTLED_FAILURE",
+    settlementTxHash: `0x${"dd".repeat(32)}`,
+  } as LivePolicyHistoryItem;
+  const html = renderToStaticMarkup(createElement(PolicyHistory, { policies: [policy, settled] }));
+
+  assert.match(html, /2 TOTAL · 1 ACTIVE · 1 SETTLED/);
+  assert.match(html, /LOCAL TIME/);
+  assert.match(html, new RegExp(settled.settlementTxHash!));
+});

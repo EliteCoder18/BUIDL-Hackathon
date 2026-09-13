@@ -110,6 +110,7 @@ export function createDemoSaga(runtime, {
       const jobKey = await runtime.contracts.jobs.jobKey(jobId);
       const job = { jobKey, jobId, agentId: agent.agentId, amountIn, minOut, coverageAmount, deadline, state: "SEPOLIA_MANDATE_MINED", createTxHash: tx.hash };
       store.jobs.set(jobKey, job);
+      store.recordTransaction(transaction("sepolia", receipt));
       return {
         data: job,
         events: [
@@ -166,6 +167,7 @@ export function createDemoSaga(runtime, {
       nonces.set(quote.underwriter, quote.nonce + 1n);
       store.policies.set(policyId, policy);
       job.policyId = policyId;
+      store.recordTransaction(transaction("creditcoin", receipt));
       return {
         data: policy,
         events: [
@@ -189,6 +191,7 @@ export function createDemoSaga(runtime, {
       job.outcome = outcome;
       job.executionTxHash = tx.hash;
       job.state = outcome === "success" ? "EXECUTED_SUCCESS" : "EXECUTED_VIOLATION";
+      store.recordTransaction(transaction("sepolia", receipt));
       return { data: job, events: [], transactions: [transaction("sepolia", receipt)] };
     },
 
@@ -196,6 +199,8 @@ export function createDemoSaga(runtime, {
       const job = store.requireJob(jobKey);
       const proof = await proofBridge.prove(job);
       store.proofs.set(jobKey, proof);
+      store.recordTransaction({ chain: "sepolia", blockNumber: proof.sourceBlockNumber });
+      store.recordTransaction({ chain: "creditcoin", blockNumber: proof.creditcoinBlockNumber });
       return {
         data: proof,
         events: [{ type: "START_PROOF", requestId: proof.id }],
@@ -231,6 +236,7 @@ export function createDemoSaga(runtime, {
         settlementTxHash: tx.hash,
         attestedAt: Number((await runtime.creditcoin.provider.getBlock(receipt.blockNumber)).timestamp),
       });
+      store.recordTransaction(transaction("creditcoin", receipt));
       return {
         data: policy,
         events: [{ type: "PROOF_SETTLED", outcome: success ? "success" : "slashed", proofId: proof.id }],

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { ACTIVE_JOURNEY_KEY, isJourneyPath, parseJourneyPath } from "../../lib/journey/active-journey";
 import { StatusChip } from "./StatusChip";
 
 const NAV_ITEMS = [
@@ -18,6 +19,7 @@ export interface TechnicalShellProps {
   modeControl?: ReactNode;
   apiOnline?: boolean;
   modeLabel?: string;
+  journeyScope?: string;
 }
 
 export function TechnicalShell({
@@ -26,9 +28,26 @@ export function TechnicalShell({
   modeControl,
   apiOnline = true,
   modeLabel = "LOCAL TWIN",
+  journeyScope = "default",
 }: TechnicalShellProps) {
   const pathname = usePathname();
-  const activeItem = NAV_ITEMS.find((item) => item.href === "/" ? pathname === "/" : pathname.startsWith(item.href));
+  const [journeyHref, setJourneyHref] = useState("/jobs/new");
+  useEffect(() => {
+    const storageKey = `${ACTIVE_JOURNEY_KEY}:${journeyScope}`;
+    if (pathname === "/jobs/new") {
+      sessionStorage.removeItem(storageKey);
+      setJourneyHref("/jobs/new");
+      return;
+    }
+    const current = parseJourneyPath(pathname);
+    if (current) sessionStorage.setItem(storageKey, current);
+    setJourneyHref(current ?? parseJourneyPath(sessionStorage.getItem(storageKey)) ?? "/jobs/new");
+  }, [journeyScope, pathname]);
+  const activeItem = NAV_ITEMS.find((item) => item.href === "/"
+    ? pathname === "/"
+    : item.href === "/jobs/new"
+      ? pathname.startsWith(item.href) || isJourneyPath(pathname)
+      : pathname.startsWith(item.href));
 
   return (
     <div className="eclipse-shell">
@@ -48,10 +67,13 @@ export function TechnicalShell({
 
         <nav className="orbital-nav" aria-label="Primary">
           {NAV_ITEMS.map((item) => {
-            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            const journeyItem = item.href === "/jobs/new";
+            const active = item.href === "/" ? pathname === "/" : journeyItem ? pathname.startsWith(item.href) || isJourneyPath(pathname) : pathname.startsWith(item.href);
+            const href = journeyItem ? journeyHref : item.href;
+            const label = journeyItem && journeyHref !== "/jobs/new" ? "Resume job" : item.label;
             return (
-              <Link key={item.href} href={item.href} className={`orbital-nav__item${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined}>
-                <span>{item.index}</span><b>{item.label}</b>
+              <Link key={item.href} href={href} className={`orbital-nav__item${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined}>
+                <span>{item.index}</span><b>{label}</b>
               </Link>
             );
           })}

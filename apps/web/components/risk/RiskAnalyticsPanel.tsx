@@ -51,23 +51,34 @@ export function RiskAnalyticsPanel({
         <div><span>CALIBRATED FAILURE RISK</span><strong>{probability == null ? "—" : `${(probability * 100).toFixed(1)}%`}</strong></div>
         {modelVersion && <code>{modelVersion}</code>}
       </div>
-      <div className="risk-analytics__chart" role="img" aria-label="SHAP feature attribution chart">
-        <ResponsiveContainer width="100%" height={Math.max(compact ? 190 : 220, chart.rows.length * (compact ? 42 : 50))}>
-          <BarChart data={chart.rows} layout="vertical" margin={{ top: 8, right: 18, bottom: 20, left: compact ? 8 : 24 }}>
-            <CartesianGrid stroke="#152837" horizontal={false} />
-            <XAxis type="number" domain={chart.domain} tick={{ fill: "#a69dac", fontSize: 12 }} axisLine={{ stroke: "#4b405b" }} tickLine={false} tickFormatter={(value) => Number(value).toFixed(2)} />
-            <YAxis type="category" dataKey="label" width={compact ? 128 : 168} tick={{ fill: "#c0b8ce", fontSize: 12 }} axisLine={false} tickLine={false} />
-            <Tooltip cursor={{ fill: "rgba(169,150,255,.06)" }} contentStyle={{ background: "#0f0a18", border: "1px solid #4b405b", borderRadius: 12, fontFamily: "ui-monospace", fontSize: 12 }} formatter={(value, _name, item) => [`${Number(value).toFixed(3)} · observed ${item.payload.valueLabel}`, "SHAP impact"]} />
-            <ReferenceLine x={0} stroke="#7890a2" />
-            <Bar dataKey="shapValue" radius={[4, 4, 4, 4]} minPointSize={4} animationDuration={400}>
-              {chart.rows.map((feature) => <Cell key={feature.name} fill={feature.direction === "risk" ? "#ff5e66" : feature.direction === "protective" ? "#c8ff5a" : "#9289a3"} />)}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-        <ul className="sr-only">
-          {chart.rows.map((feature) => <li key={feature.name}>{feature.label}: observed value {feature.valueLabel}; SHAP impact {feature.impactLabel}; {feature.direction}.</li>)}
-        </ul>
-      </div>
+      {compact ? (
+        <div className="risk-analytics__signals" role="list" aria-label="Key risk signals">
+          {chart.rows.slice(0, 4).map((feature) => (
+            <div key={feature.name} className={`risk-analytics__signal risk-analytics__signal--${feature.direction}`}>
+              <span>{feature.label}</span>
+              <strong>{feature.impactLabel}</strong>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="risk-analytics__chart" role="img" aria-label="SHAP feature attribution chart">
+          <ResponsiveContainer width="100%" height={Math.max(220, chart.rows.length * 50)}>
+            <BarChart data={chart.rows} layout="vertical" margin={{ top: 8, right: 18, bottom: 20, left: 24 }}>
+              <CartesianGrid stroke="#152837" horizontal={false} />
+              <XAxis type="number" domain={chart.domain} tick={{ fill: "#a69dac", fontSize: 12 }} axisLine={{ stroke: "#4b405b" }} tickLine={false} tickFormatter={(value) => Number(value).toFixed(2)} />
+              <YAxis type="category" dataKey="label" width={168} tick={{ fill: "#c0b8ce", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <Tooltip cursor={{ fill: "rgba(169,150,255,.06)" }} contentStyle={{ background: "#0f0a18", border: "1px solid #4b405b", borderRadius: 12, fontFamily: "ui-monospace", fontSize: 12 }} formatter={(value, _name, item) => [`${Number(value).toFixed(3)} · observed ${item.payload.valueLabel}`, "SHAP impact"]} />
+              <ReferenceLine x={0} stroke="#7890a2" />
+              <Bar dataKey="shapValue" radius={[4, 4, 4, 4]} minPointSize={4} animationDuration={400}>
+                {chart.rows.map((feature) => <Cell key={feature.name} fill={feature.direction === "risk" ? "#ff5e66" : feature.direction === "protective" ? "#c8ff5a" : "#9289a3"} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <ul className="sr-only">
+            {chart.rows.map((feature) => <li key={feature.name}>{feature.label}: observed value {feature.valueLabel}; SHAP impact {feature.impactLabel}; {feature.direction}.</li>)}
+          </ul>
+        </div>
+      )}
       <p className="risk-analytics__summary">{explanation.summary}</p>
       <details className="model-evidence">
         <summary>Model evidence</summary>

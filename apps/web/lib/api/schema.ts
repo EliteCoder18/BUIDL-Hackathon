@@ -182,6 +182,7 @@ export interface DemoStateResource {
   jobs: JobResource[];
   policies: PolicyResource[];
   proofs: ProofResource[];
+  chainHeads?: { sepolia?: number | IntegerString; creditcoin?: number | IntegerString };
 }
 
 type JsonRecord = Record<string, unknown>;
@@ -512,10 +513,17 @@ export function parseDemoState(value: unknown): DemoStateResource {
   if (!Array.isArray(source.agents) || !Array.isArray(source.jobs) || !Array.isArray(source.policies) || !Array.isArray(source.proofs)) {
     throw new TypeError("invalid demo state collections");
   }
+  const chainHeads = source.chainHeads === undefined ? undefined : record(source.chainHeads, "chain heads");
+  const block = (chain: "sepolia" | "creditcoin") => {
+    const value = chainHeads?.[chain];
+    if (value === undefined) return undefined;
+    return typeof value === "number" ? number(value, `${chain} head`) : integerString(value, `${chain} head`);
+  };
   return {
     agents: source.agents.map(parseAgent),
     jobs: source.jobs.map(parseJob),
     policies: source.policies.map(parsePolicy),
     proofs: source.proofs.map(parseProof),
+    chainHeads: chainHeads ? { sepolia: block("sepolia"), creditcoin: block("creditcoin") } : undefined,
   };
 }

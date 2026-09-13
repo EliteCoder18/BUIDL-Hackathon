@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
-import { SagaRail } from "../../../components/dashboard/SagaRail";
+import { SagaJourneyBoard } from "../../../components/dashboard/SagaJourneyBoard";
 import { StatusChip } from "../../../components/ui/StatusChip";
 import { TechnicalPanel } from "../../../components/ui/TechnicalPanel";
 import { useCrossChainOrchestrator } from "../../../lib/orchestration";
@@ -46,13 +46,13 @@ export default function CreateJobPage() {
   }
   return <div className="route-stack">
     <header className="route-heading"><div><p className="kicker">SEPOLIA / MANDATE BUILDER</p><h1>Fund an objective agent job</h1><p>{mode === "wallet" ? "Your wallet signs each client-owned action on public Sepolia. Agent and proof roles remain separate." : "The demo client deposits mUSDC and constrains DEX output, slippage, and execution deadline on-chain."}</p></div><StatusChip label={mode === "wallet" ? "PUBLIC TESTNET · METAMASK" : "EMBEDDED CONTRACT TX"} tone="success" pulse /></header>
-    <div className="form-layout"><TechnicalPanel eyebrow="JOB PARAMETERS" title="Treasury rebalance mandate"><><form className="technical-form" onSubmit={submit}>
+    <div className="form-layout"><TechnicalPanel eyebrow="JOB PARAMETERS" title="Treasury rebalance mandate" explanation="These constraints become the objective on-chain test: the agent must deliver at least the minimum output before the deadline."><><form className="technical-form" onSubmit={submit}>
       <label><span>ERC-8004 AGENT</span><select name="agentId" defaultValue={mode === "wallet" ? "10130" : "0"}>{mode === "wallet" ? <option value="10130">#10130 — Public testnet agent</option> : <><option value="0">#0000 — Treasury Delta</option><option value="1">#0001 — Liquidity Sigma</option></>}</select></label>
       <div className="form-pair"><label><span>INPUT (BASE UNITS)</span><input name="amountIn" inputMode="numeric" pattern="[0-9]+" defaultValue="100000000" required /></label><label><span>MINIMUM OUTPUT</span><input name="minOut" inputMode="numeric" pattern="[0-9]+" defaultValue="99000000" required /></label></div>
       <div className="form-pair"><label><span>COVERAGE (mUSDC · MAX 1,000)</span><input name="coverageAmount" inputMode="decimal" pattern="[0-9]+(?:\.[0-9]{1,6})?" defaultValue="100" aria-describedby="coverage-help" required /><small id="coverage-help">Enter mUSDC, with up to six decimal places.</small></label><label><span>DEADLINE (SECONDS)</span><input name="deadlineSeconds" type="number" min="60" max="86400" defaultValue="3600" required /></label></div>
       <fieldset><legend>DEMO OUTCOME SCENARIO</legend><button type="button" className={scenario === "success" ? "scenario-active" : ""} onClick={() => setScenario("success")}>SUCCESS / CAPITAL RELEASE</button><button type="button" className={scenario === "violation" ? "scenario-active danger" : ""} onClick={() => setScenario("violation")}>VIOLATION / SLASH</button></fieldset>
       {error && <p className="form-error" role="alert">{error}</p>}<button className="technical-button technical-button--primary technical-button--wide" disabled={busy}>{busy ? "MINING MANDATE + OPENING AUCTION…" : mode === "wallet" ? "PREPARE METAMASK TRANSACTIONS" : "CREATE MANDATE + REQUEST QUOTES"}</button>
       {mode === "wallet" && walletInput && <WalletMandateFlow input={walletInput} />}
-    </form>{mode === "wallet" && !walletInput && <WalletMandateRecovery />}</></TechnicalPanel><TechnicalPanel eyebrow="EXPECTED EVENT STREAM" title="Deterministic transition preview"><SagaRail state={state} /><div className="spec-ledger"><span><b>01</b> CLIENT FUNDS JOB MANAGER</span><span><b>02</b> RECEIPT FINALIZES ON SEPOLIA</span><span><b>03</b> THREE UNDERWRITERS SIGN EIP-712</span><span><b>04</b> 20/80 CAPITAL LOCKS ON CC3</span></div></TechnicalPanel></div>
+    </form>{mode === "wallet" && !walletInput && <WalletMandateRecovery />}</></TechnicalPanel><TechnicalPanel eyebrow="CROSS-CHAIN JOURNEY" title="From mandate to enforceable guarantee" explanation="Each step names the network currently responsible for advancing the guarantee lifecycle."><SagaJourneyBoard state={state} /><div className="journey-guarantees"><span><b>OBJECTIVE</b> Minimum output and deadline are fixed on Sepolia.</span><span><b>CAPITAL</b> Every accepted policy locks a 20/80 first-loss waterfall.</span></div></TechnicalPanel></div>
   </div>;
 }

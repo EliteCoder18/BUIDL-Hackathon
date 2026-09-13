@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { buildSagaSteps } from "../components/dashboard/saga-model";
+import { buildSagaJourney } from "../components/dashboard/saga-journey-model";
+import { WalletTransactionStepper } from "../components/wallet/WalletTransactionStepper";
 import { calculateWaterfall } from "../components/policy/loss-waterfall-model";
 import { normaliseRiskFeatures, riskChartModel } from "../components/risk/risk-model";
 
@@ -15,6 +19,50 @@ test("saga rail marks completed, active, and future phases deterministically", (
     "active",
     "pending",
   ]);
+});
+
+test("job journey identifies the current action and bounded progress", () => {
+  const journey = buildSagaJourney("SEPOLIA_MANDATE_MINED");
+
+  assert.equal(journey.current.id, "finality");
+  assert.equal(journey.current.description, "Sepolia receipt becomes canonical");
+  assert.equal(journey.completedCount, 1);
+  assert.equal(journey.progress, 20);
+  assert.equal(buildSagaJourney("SETTLED_SUCCESS").progress, 100);
+});
+
+test("wallet confirmation uses a distinct pending state", () => {
+  const html = renderToStaticMarkup(createElement(WalletTransactionStepper, {
+    steps: [{ label: "Create funded mandate", chain: "Sepolia", status: "active" }],
+    busy: true,
+    onAdvance: () => {},
+  }));
+
+  assert.match(html, /technical-button--pending/);
+  assert.match(html, /AWAITING METAMASK CONFIRMATION/);
+});
+
+test("confirmed wallet policy remains selected when the quote route remounts", () => {
+  const source = readFileSync(new URL("../app/quotes/[jobKey]/page.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /selectedQuoteId=\{confirmedQuoteId\}/);
+  assert.match(source, /context\.creditcoinTxHash/);
+  assert.match(source, /context\.quoteId/);
+});
+
+test("wallet policy flow replaces the quote auction after a quote is chosen", () => {
+  const source = readFileSync(new URL("../app/quotes/[jobKey]/page.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /showWalletPolicyFlow/);
+  assert.match(source, /showWalletPolicyFlow\s*\?\s*<WalletPolicyFlow/);
+  assert.match(source, /:\s*<QuoteAuctionGrid/);
+});
+
+test("compact quote analytics use a scannable signal ledger", () => {
+  const source = readFileSync(new URL("../components/risk/RiskAnalyticsPanel.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /risk-analytics__signals/);
+  assert.match(source, /chart\.rows\.slice\(0, 4\)/);
 });
 
 test("slashed waterfall consumes the 20% junior tranche before senior capital", () => {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useBlockNumber } from "wagmi";
 import { useExecutionMode } from "./execution-mode-provider";
 import { CrossChainTopology } from "../components/cross-chain/CrossChainTopology";
 import { resolveMarketMetrics } from "../components/dashboard/market-model";
@@ -23,6 +23,8 @@ export default function OperationsPage() {
   const { api, state, context } = useCrossChainOrchestrator();
   const { mode } = useExecutionMode();
   const { address } = useAccount();
+  const { data: publicSepoliaHead } = useBlockNumber({ chainId: 11155111, query: { enabled: mode === "wallet" } });
+  const { data: publicCreditcoinHead } = useBlockNumber({ chainId: 102031, query: { enabled: mode === "wallet" } });
   const [snapshot, setSnapshot] = useState<DemoStateResource>();
   const [vault, setVault] = useState<VaultResource>();
   const [liveMarket, setLiveMarket] = useState<LiveMarketResource>();
@@ -99,29 +101,34 @@ export default function OperationsPage() {
         </div>
 
         <div className="telemetry-satellite telemetry-satellite--agents">
-          <MetricReadout label="REGISTERED AGENTS" value={snapshot?.agents.length ?? "—"} detail="ERC-8004 IDENTITIES" tone="green" />
+          <MetricReadout label="REGISTERED AGENTS" value={snapshot?.agents.length ?? "—"} detail="ERC-8004 IDENTITIES" explanation="Agents are treated as insurable economic actors. Their verified execution history informs failure-risk pricing." tone="green" />
         </div>
         <div className="telemetry-satellite telemetry-satellite--liquidity">
-          <MetricReadout label="SENIOR LIQUIDITY" value={units(metrics.vault?.totalAssets)} detail="mUSDC / CC3" tone="cyan" />
+          <MetricReadout label="SENIOR LIQUIDITY" value={units(metrics.vault?.totalAssets)} detail="mUSDC / CC3" explanation="Creditcoin vault liquidity supplies the senior 80% of each performance bond." tone="cyan" />
         </div>
         <div className="telemetry-satellite telemetry-satellite--policies">
-          <MetricReadout label="ACTIVE POLICIES" value={metrics.activePolicyCount ?? "—"} detail="CAPITAL RESERVED" tone="amber" />
+          <MetricReadout label="ACTIVE POLICIES" value={metrics.activePolicyCount ?? "—"} detail="CAPITAL RESERVED" explanation="An active policy has capital reserved against an agent mandate that has not settled yet." tone="amber" />
         </div>
         <div className="telemetry-satellite telemetry-satellite--proofs">
-          <MetricReadout label="CONFIRMED PROOFS" value={metrics.confirmedProofCount ?? "—"} detail="ATTESTCOIN EVIDENCE" />
+          <MetricReadout label="CONFIRMED PROOFS" value={metrics.confirmedProofCount ?? "—"} detail="ATTESTCOIN EVIDENCE" explanation="Verified outcome evidence authorizes Creditcoin settlement without trusting the agent's own report." />
         </div>
       </section>
 
       <div className="evidence-ribbon">
-        <NetworkTelemetry reservedCapital={units(metrics.vault?.reserved)} proofLatency={mode === "wallet" ? "PUBLIC / FINALIZED" : "LOCAL / <1s"} />
+        <NetworkTelemetry
+          sepoliaBlock={mode === "wallet" ? publicSepoliaHead?.toString() ?? "SYNCING" : snapshot?.chainHeads?.sepolia ?? "AWAITING TX"}
+          creditcoinBlock={mode === "wallet" ? publicCreditcoinHead?.toString() ?? "SYNCING" : snapshot?.chainHeads?.creditcoin ?? "AWAITING TX"}
+          reservedCapital={units(metrics.vault?.reserved)}
+          proofLatency={mode === "wallet" ? "PUBLIC / FINALIZED" : "LOCAL / <1s"}
+        />
       </div>
 
       <div className="observatory-lower-grid">
-        <TechnicalPanel eyebrow="DETERMINISTIC ORCHESTRATOR" title="Capital-bound saga vector" action={<StatusChip label={displayState.replaceAll("_", " ")} tone="cyan" pulse />}>
+        <TechnicalPanel eyebrow="DETERMINISTIC ORCHESTRATOR" title="Capital-bound saga vector" explanation="This rail shows which chain or actor currently owns the next action in the guarantee lifecycle." action={<StatusChip label={displayState.replaceAll("_", " ")} tone="cyan" pulse />}>
           <SagaRail state={displayState} compact />
         </TechnicalPanel>
 
-        <TechnicalPanel eyebrow="OPERATOR APERTURES" title="Enter the market">
+        <TechnicalPanel eyebrow="OPERATOR APERTURES" title="Enter the market" explanation="Start with agent history, create a protected mandate, or inspect the capital that backs accepted policies.">
           <div className="operator-cards">
             <Link href="/agents"><span>01 / IDENTITY</span><strong>Inspect agents</strong><small>Attested histories + ML attribution</small><i>↗</i></Link>
             <Link href="/jobs/new"><span>02 / MANDATE</span><strong>Fund a job</strong><small>Constrain objective execution</small><i>↗</i></Link>
@@ -129,6 +136,14 @@ export default function OperationsPage() {
           </div>
         </TechnicalPanel>
       </div>
+
+      <TechnicalPanel eyebrow="WHY THE NETWORK EXISTS" title="One guarantee, three indispensable systems" explanation="Each system controls a different trust boundary: user funds, risk capital, and objective cross-chain evidence.">
+        <div className="protocol-explainer">
+          <article><span>01 / SEPOLIA</span><strong>Create the mandate</strong><p>The client funds an agent job with measurable output and deadline conditions.</p></article>
+          <article><span>02 / CREDITCOIN</span><strong>Make the promise enforceable</strong><p>Underwriters compete on premium and lock 20% junior capital beside 80% senior vault liquidity.</p></article>
+          <article><span>03 / ATTESTCOIN</span><strong>Verify what happened</strong><p>Cross-chain evidence proves the execution outcome that releases capital or triggers the insured payout.</p></article>
+        </div>
+      </TechnicalPanel>
 
       {mode === "wallet" && <TechnicalPanel eyebrow="CREDITCOIN / WALLET LEDGER" title="Policy transaction history" action={<StatusChip label={historyStatus} tone={!address || error ? "danger" : "cyan"} />}>
         {!address

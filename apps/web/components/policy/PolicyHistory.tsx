@@ -25,7 +25,11 @@ function status(policy: LivePolicyHistoryItem) {
 
 export function PolicyHistory({ policies }: { policies: LivePolicyHistoryItem[] }) {
   if (policies.length === 0) return <div className="policy-history-empty"><strong>NO ON-CHAIN HISTORY</strong><span>No policies found for this wallet.</span></div>;
-  return <ol className="policy-history" aria-label="Connected wallet policy transaction history">
+  const active = policies.filter((policy) => policy.state === "ACTIVE").length;
+  const settled = policies.length - active;
+  return <>
+    <p className="policy-history__summary">{policies.length} TOTAL · {active} ACTIVE · {settled} SETTLED</p>
+    <ol className="policy-history" aria-label="Connected wallet policy transaction history">
     {policies.map((policy) => {
       const state = status(policy);
       return <li key={policy.policyId} className="policy-history__item">
@@ -37,7 +41,7 @@ export function PolicyHistory({ policies }: { policies: LivePolicyHistoryItem[] 
           <div><dt>COVERAGE</dt><dd>{musdc(policy.coverageAmount)} <small>mUSDC</small></dd></div>
           <div><dt>PREMIUM</dt><dd>{musdc(policy.premiumAmount)} <small>mUSDC</small></dd></div>
           <div><dt>UNDERWRITER</dt><dd title={policy.underwriter}>{shortHash(policy.underwriter)}</dd></div>
-          <div><dt>ACCEPTED</dt><dd><time dateTime={policy.acceptedAt}>{new Date(policy.acceptedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" })} UTC</time></dd></div>
+          <div><dt>ACCEPTED</dt><dd><time dateTime={policy.acceptedAt}>{new Date(policy.acceptedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })} LOCAL TIME</time></dd></div>
         </dl>
         <footer>
           <span>JOB <code title={policy.jobKey}>{shortHash(policy.jobKey)}</code></span>
@@ -48,5 +52,6 @@ export function PolicyHistory({ policies }: { policies: LivePolicyHistoryItem[] 
         </footer>
       </li>;
     })}
-  </ol>;
+    </ol>
+  </>;
 }
