@@ -393,8 +393,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .quote-card > .risk-analytics .risk-analytics__heading strong { font-size:24px; }
 .quote-card > .risk-analytics .risk-analytics__summary { min-height:46px; margin:13px 0 0; display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 .quote-card > .risk-analytics .model-evidence { margin-top:10px; padding-top:8px; }
-.quote-card__footer { align-items: center; border: 0; border-top: 1px solid var(--line); }
+.quote-card__footer { align-items: center; display: grid; grid-template-columns: minmax(0,1fr) auto; border: 0; border-top: 1px solid var(--line); }
+.quote-card__footer > div { min-width: 0; }
 .quote-card__footer span, .quote-card__footer code { display: block; color: var(--muted); font: 700 var(--micro-copy) ui-monospace, monospace; }
+.quote-card__footer code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .quote-auction-empty { padding: 60px; border: 1px solid var(--line); border-radius: var(--radius); text-align: center; }
 .job-key-strip { padding: 11px 16px; display: flex; gap: 14px; overflow: hidden; border: 1px solid var(--line); border-radius: 999px; background: rgba(15,9,23,.6); }
 .job-key-strip span { color: var(--lilac); font: 700 var(--micro-copy) ui-monospace, monospace; }
@@ -652,6 +654,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .saga-rail--compact .saga-rail__step { border-right: 0; border-bottom: 1px solid var(--line); }
   .quote-card__economics { grid-template-columns: 1fr; }
   .quote-card__economics div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .quote-card__footer { grid-template-columns: 1fr; }
+  .quote-card__footer button { width: 100%; }
   .agent-identity { align-items: flex-start; }
   .loss-waterfall__bar { height: 150px; }
   .loss-waterfall__label span { font-size: var(--micro-copy); }

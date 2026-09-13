@@ -13,4 +13,13 @@ test("job navigation resumes quotes and policy locking across operations", async
   await resumeQuotes.click();
   await expect(page).toHaveURL(quoteUrl);
 
+  const clippedActions = await page.locator(".quote-card").evaluateAll((cards) => cards.filter((card) => {
+    const action = card.querySelector("button");
+    if (!action) return true;
+    const cardBox = card.getBoundingClientRect();
+    const actionBox = action.getBoundingClientRect();
+    return actionBox.left < cardBox.left || actionBox.right > cardBox.right;
+  }).length);
+  expect(clippedActions).toBe(0);
+
 });

@@ -64,6 +64,14 @@ test("wallet policy flow replaces the quote auction after a quote is chosen", ()
   assert.match(source, /:\s*<QuoteAuctionGrid/);
 });
 
+test("quote cards keep the policy action visible beside a long nonce", () => {
+  const styles = readFileSync(new URL("../app/styles.css", import.meta.url), "utf8");
+
+  assert.match(styles, /\.quote-card__footer\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\) auto/);
+  assert.match(styles, /\.quote-card__footer\s*>\s*div\s*\{[^}]*min-width:\s*0/);
+  assert.match(styles, /\.quote-card__footer code\s*\{[^}]*text-overflow:\s*ellipsis/);
+});
+
 test("compact quote analytics use a scannable signal ledger", () => {
   const source = readFileSync(new URL("../components/risk/RiskAnalyticsPanel.tsx", import.meta.url), "utf8");
 
