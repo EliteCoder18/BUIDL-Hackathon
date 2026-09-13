@@ -12,6 +12,7 @@ import { quoteToDisplay } from "../../../lib/risk/quote-display";
 import type { Bytes32 } from "../../../lib/trustfutures/types";
 import { useExecutionMode } from "../../execution-mode-provider";
 import { WalletPolicyConfirmation, WalletPolicyFlow } from "../../../components/wallet/WalletPolicyFlow";
+import { cancelWalletJourney } from "../../../lib/journey/active-journey";
 
 export default function QuoteAuctionPage({ params }: { params: { jobKey: string } }) {
   const jobKey = params.jobKey as Bytes32;
@@ -55,6 +56,13 @@ export default function QuoteAuctionPage({ params }: { params: { jobKey: string 
     try { const result = await api.acceptPolicy(jobKey, quoteIndex); router.push(`/policies/${result.data.policyId}`); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "Policy lock failed"); setBusy(""); }
   }
+  function cancelPolicySetup() {
+    cancelWalletJourney(jobKey, {
+      storage: sessionStorage,
+      reset: () => send({ type: "RESET" }),
+      navigate: (href) => router.replace(href),
+    });
+  }
   const pageTitle = confirmedQuoteId ? "Performance bond active" : showWalletPolicyFlow ? "Confirm capital lock" : "Signed failure-risk auction";
   const pageStatus = confirmedQuoteId ? "POLICY LOCKED" : showWalletPolicyFlow ? "AWAITING WALLET" : `${displayQuotes.length || "—"} EIP-712 QUOTES`;
   return <div className="route-stack quote-route">
@@ -70,7 +78,7 @@ export default function QuoteAuctionPage({ params }: { params: { jobKey: string 
     {context.creditcoinTxHash && confirmedQuoteId
       ? <WalletPolicyConfirmation txHash={context.creditcoinTxHash} quote={confirmedQuote} />
       : showWalletPolicyFlow
-        ? <WalletPolicyFlow live={live!} quote={liveQuote!} onCancel={() => setLiveQuote(undefined)} />
+        ? <WalletPolicyFlow live={live!} quote={liveQuote!} onCancel={cancelPolicySetup} />
         : <QuoteAuctionGrid quotes={displayQuotes} selectedQuoteId={confirmedQuoteId} busyQuoteId={busy} disabled={Boolean(busy)} onSelect={accept} />}
     {!showWalletPolicyFlow && !confirmedQuoteId && <TechnicalPanel eyebrow="SIGNING DOMAIN" title="Canonical quote integrity" explanation="EIP-712 signatures bind every quote to this job, underwriter, price, expiry, and Creditcoin policy contract."><div className="integrity-grid"><span><small>DOMAIN</small><strong>TrustFutures v1</strong></span><span><small>VERIFYING CHAIN</small><strong>Creditcoin CC3 / 102031</strong></span><span><small>CAPITAL WATERFALL</small><strong>20% JUNIOR → 80% SENIOR</strong></span><span><small>ECONOMIC AUTHORITY</small><strong>MODEL OUTPUT ONLY</strong></span></div></TechnicalPanel>}
   </div>;

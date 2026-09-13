@@ -9,3 +9,14 @@ export function parseJourneyPath(value: string | null): string | undefined {
 export function isJourneyPath(value: string): boolean {
   return parseJourneyPath(value) !== undefined;
 }
+
+export function cancelWalletJourney(jobKey: string, dependencies: {
+  storage: Pick<Storage, "removeItem">;
+  reset: () => void;
+  navigate: (href: string) => void;
+}): void {
+  dependencies.storage.removeItem(`trustfutures:live:${jobKey}`);
+  dependencies.storage.removeItem(`${ACTIVE_JOURNEY_KEY}:wallet`);
+  dependencies.reset();
+  dependencies.navigate("/jobs/new");
+}

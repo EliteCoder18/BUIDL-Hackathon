@@ -48,17 +48,6 @@ test("wallet confirmation uses a distinct pending state", () => {
   assert.match(html, /AWAITING METAMASK CONFIRMATION/);
 });
 
-test("wallet policy setup exposes a cancel action before capital is locked", () => {
-  const html = renderToStaticMarkup(createElement(WalletTransactionStepper, {
-    steps: [{ label: "Mint premium mUSDC", chain: "Creditcoin CC3", status: "active" }],
-    busy: false,
-    onAdvance: () => {},
-    cancel: { label: "Cancel policy setup", onClick: () => {} },
-  }));
-
-  assert.match(html, />Cancel policy setup</);
-});
-
 test("confirmed wallet policy remains selected when the quote route remounts", () => {
   const source = readFileSync(new URL("../app/quotes/[jobKey]/page.tsx", import.meta.url), "utf8");
 

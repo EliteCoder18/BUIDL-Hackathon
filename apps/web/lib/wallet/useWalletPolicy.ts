@@ -55,5 +55,5 @@ export function useWalletPolicy(live: LiveQuotesResource, quote: LiveQuote) {
       return false;
     } finally { setBusy(false); }
   }
-  return { steps, busy, error, complete: index === 3, advance, cancel, cancelLabel: index >= 2 ? "Revoke approval + cancel" : "Cancel policy setup" };
+  return { steps, busy, error, complete: index === 3, advance, cancel, cancelLabel: index >= 2 ? "Revoke approval + start over" : "Cancel and start new job" };
 }
