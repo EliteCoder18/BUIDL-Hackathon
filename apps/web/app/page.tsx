@@ -54,7 +54,8 @@ export default function OperationsPage() {
       }
     }
     load();
-    return () => { active = false; };
+    const timer = mode === "wallet" && address ? window.setInterval(load, 12_000) : undefined;
+    return () => { active = false; if (timer !== undefined) window.clearInterval(timer); };
   }, [address, api, mode]);
 
   const metrics = resolveMarketMetrics(mode, snapshot, vault, liveMarket);
@@ -128,13 +129,20 @@ export default function OperationsPage() {
           <SagaRail state={displayState} compact />
         </TechnicalPanel>
 
-        <TechnicalPanel eyebrow="OPERATOR APERTURES" title="Enter the market" explanation="Start with agent history, create a protected mandate, or inspect the capital that backs accepted policies.">
+        {mode === "wallet" && displayState === "CREDITCOIN_POLICY_LOCKED" ? <TechnicalPanel eyebrow="CLIENT STAGE COMPLETE" title="Network operators take it from here" explanation="Your policy is active. The remaining transactions belong to the agent, proof service, and settlement keeper." action={<StatusChip label="AWAITING AGENT" tone="warning" pulse />}>
+          <ol className="policy-handoff">
+            <li><b>01</b><div><strong>Agent execution</strong><span>The registered agent executes the funded mandate on Sepolia.</span></div><small>SEPOLIA</small></li>
+            <li><b>02</b><div><strong>Attestcoin proof</strong><span>The proof service verifies the finalized JobSettled transaction.</span></div><small>ATTESTCOIN</small></li>
+            <li><b>03</b><div><strong>Keeper settlement</strong><span>The keeper submits proof-backed settlement on Creditcoin.</span></div><small>CREDITCOIN</small></li>
+          </ol>
+          <footer className="policy-handoff__footer"><i /> THIS VIEW REFRESHES FROM PUBLIC CHAIN STATE EVERY 12 SECONDS</footer>
+        </TechnicalPanel> : <TechnicalPanel eyebrow="OPERATOR APERTURES" title="Enter the market" explanation="Start with agent history, create a protected mandate, or inspect the capital that backs accepted policies.">
           <div className="operator-cards">
             <Link href="/agents"><span>01 / IDENTITY</span><strong>Inspect agents</strong><small>Attested histories + ML attribution</small><i>↗</i></Link>
             <Link href="/jobs/new"><span>02 / MANDATE</span><strong>Fund a job</strong><small>Constrain objective execution</small><i>↗</i></Link>
             <Link href="/vault"><span>03 / CAPITAL</span><strong>Audit the vault</strong><small>20/80 loss waterfall</small><i>↗</i></Link>
           </div>
-        </TechnicalPanel>
+        </TechnicalPanel>}
       </div>
 
       <TechnicalPanel eyebrow="WHY THE NETWORK EXISTS" title="One guarantee, three indispensable systems" explanation="Each system controls a different trust boundary: user funds, risk capital, and objective cross-chain evidence.">

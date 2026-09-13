@@ -236,6 +236,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .operator-cards small { color: var(--muted); }
 .operator-cards i { grid-column: 2; grid-row: 1 / 4; align-self: center; color: var(--coral); font-style: normal; }
 
+.policy-handoff { margin: 0; padding: 0; display: grid; list-style: none; }
+.policy-handoff li { min-height: 72px; padding: 13px 0; display: grid; grid-template-columns: 36px minmax(0,1fr) auto; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); }
+.policy-handoff li:last-child { border-bottom: 0; }
+.policy-handoff li > b { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--line-hot); border-radius: 50%; color: var(--lilac); font: 700 10px ui-monospace, monospace; }
+.policy-handoff li div { min-width: 0; display: grid; gap: 4px; }
+.policy-handoff li strong { color: var(--mist); font-size: 14px; }
+.policy-handoff li span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.policy-handoff li > small { color: var(--lilac); font: 700 9px ui-monospace, monospace; letter-spacing: .08em; }
+.policy-handoff__footer { margin-top: 12px; padding-top: 12px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); color: #92899d; font: 700 9px ui-monospace, monospace; letter-spacing: .07em; }
+.policy-handoff__footer i { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; color: var(--lime); background: var(--lime); box-shadow: 0 0 10px var(--lime); animation: signal 1.8s infinite; }
+
 .error-banner, .simulation-disclosure { padding: 14px 17px; display: flex; align-items: center; gap: 16px; border: 1px solid rgba(255,94,102,.34); border-radius: 17px; color: #ffa4aa; background: rgba(71,15,29,.45); font-size: 12px; }
 .error-banner code { margin-left: auto; }
 .simulation-disclosure { display: block; color: #e6bd8d; border-color: rgba(255,180,93,.28); background: rgba(63,38,13,.4); }
@@ -618,6 +629,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .orbital-nav__item span { font-size: var(--micro-copy); }
   .orbital-nav__item b { font-size: var(--label-copy); }
   .eclipse-workspace { width: calc(100vw - 28px); padding: 150px 0 48px; }
+  .policy-handoff li { grid-template-columns: 36px minmax(0,1fr); }
+  .policy-handoff li > small { grid-column: 2; }
   .route-heading { align-items: flex-start; flex-direction: column; }
   .route-heading h1 { font-size: clamp(44px,14vw,65px); }
   .route-actions { width: 100%; justify-content: space-between; }

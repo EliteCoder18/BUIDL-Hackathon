@@ -10,7 +10,7 @@ import { calculateWaterfall } from "../components/policy/loss-waterfall-model";
 import { normaliseRiskFeatures, riskChartModel } from "../components/risk/risk-model";
 
 test("saga rail marks completed, active, and future phases deterministically", () => {
-  const steps = buildSagaSteps("CREDITCOIN_POLICY_LOCKED");
+  const steps = buildSagaSteps("QUOTE_SIGNED");
 
   assert.deepEqual(steps.map((step) => step.status), [
     "complete",
@@ -19,6 +19,12 @@ test("saga rail marks completed, active, and future phases deterministically", (
     "active",
     "pending",
   ]);
+});
+
+test("a locked policy completes capital bonding and activates outcome delivery", () => {
+  const steps = buildSagaSteps("CREDITCOIN_POLICY_LOCKED");
+
+  assert.deepEqual(steps.map((step) => step.status), ["complete", "complete", "complete", "complete", "active"]);
 });
 
 test("job journey identifies the current action and bounded progress", () => {
@@ -70,6 +76,16 @@ test("public vault renders the fast capital snapshot independently of policy his
 
   assert.match(source, /api\.getLiveVault\(\)/);
   assert.match(source, /Promise\.allSettled/);
+});
+
+test("operations explains the post-lock operator handoff and refreshes public state", () => {
+  const source = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /CLIENT STAGE COMPLETE/);
+  assert.match(source, /Agent execution/);
+  assert.match(source, /Attestcoin proof/);
+  assert.match(source, /Keeper settlement/);
+  assert.match(source, /window\.setInterval\(load, 12_000\)/);
 });
 
 test("slashed waterfall consumes the 20% junior tranche before senior capital", () => {

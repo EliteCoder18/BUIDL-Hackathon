@@ -23,7 +23,7 @@ const ACTIVE_STEP: Record<OrchestratorState, number> = {
   SEPOLIA_MANDATE_MINED: 1,
   AUCTION_ACTIVE: 2,
   QUOTE_SIGNED: 3,
-  CREDITCOIN_POLICY_LOCKED: 3,
+  CREDITCOIN_POLICY_LOCKED: 4,
   ATTESTCOIN_PROVING: 4,
   SETTLED_SUCCESS: 5,
   SETTLED_SLASHED: 5,
@@ -36,4 +36,3 @@ export function buildSagaSteps(state: OrchestratorState): SagaStep[] {
     status: index < activeIndex ? "complete" : index === activeIndex ? "active" : "pending",
   }));
 }
-
