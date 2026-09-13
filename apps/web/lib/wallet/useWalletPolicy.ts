@@ -38,5 +38,22 @@ export function useWalletPolicy(live: LiveQuotesResource, quote: LiveQuote) {
       else { setIndex(3); send({ type: "WALLET_TX_CONFIRMED", operation: "acceptQuote", txHash: hash, quoteId: `${quote.strategy}-${quote.nonce}`, signature: quote.signature }); }
     } catch (cause) { const source = cause as { code?: number; shortMessage?: string; message?: string }; setError(source.code === 4001 || /rejected/i.test(source.shortMessage ?? "") ? "Signature request rejected. Nothing was submitted." : source.shortMessage ?? source.message ?? "MetaMask transaction failed."); } finally { setBusy(false); }
   }
-  return { steps, busy, error, complete: index === 3, advance };
+  async function cancel() {
+    if (busy) return false;
+    if (index < 2) return true;
+    if (!address || !isConnected || !client || !asset) { setError(asset ? "Connect MetaMask to revoke the policy allowance." : "Creditcoin contract manifest is still loading."); return false; }
+    setBusy(true); setError("");
+    try {
+      if (chainId !== 102031) await switchChainAsync({ chainId: 102031 });
+      const hash = await writeContractAsync({ chainId: 102031, address: asset, abi: mockErc20Abi, functionName: "approve", args: [live.domain.verifyingContract, 0n] });
+      const receipt = await client.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") throw new Error("Creditcoin allowance revocation reverted.");
+      return true;
+    } catch (cause) {
+      const source = cause as { code?: number; shortMessage?: string; message?: string };
+      setError(source.code === 4001 || /rejected/i.test(source.shortMessage ?? "") ? "Allowance revocation rejected. Policy setup remains open." : source.shortMessage ?? source.message ?? "Could not revoke the policy allowance.");
+      return false;
+    } finally { setBusy(false); }
+  }
+  return { steps, busy, error, complete: index === 3, advance, cancel, cancelLabel: index >= 2 ? "Revoke approval + cancel" : "Cancel policy setup" };
 }

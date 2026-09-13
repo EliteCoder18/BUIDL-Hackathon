@@ -25,8 +25,8 @@ export function WalletPolicyConfirmation({ txHash, quote }: { txHash: string; qu
   </section>;
 }
 
-export function WalletPolicyFlow({ live, quote }: { live: LiveQuotesResource; quote: LiveQuote }) {
+export function WalletPolicyFlow({ live, quote, onCancel }: { live: LiveQuotesResource; quote: LiveQuote; onCancel: () => void }) {
   const flow = useWalletPolicy(live, quote);
   if (flow.complete) return <WalletPolicyConfirmation txHash={flow.steps[2].hash ?? ""} quote={quote} />;
-  return <WalletTransactionStepper {...flow} onAdvance={flow.advance} />;
+  return <WalletTransactionStepper {...flow} onAdvance={flow.advance} cancel={{ label: flow.cancelLabel, onClick: async () => { if (await flow.cancel()) onCancel(); } }} />;
 }

@@ -70,7 +70,7 @@ export default function QuoteAuctionPage({ params }: { params: { jobKey: string 
     {context.creditcoinTxHash && confirmedQuoteId
       ? <WalletPolicyConfirmation txHash={context.creditcoinTxHash} quote={confirmedQuote} />
       : showWalletPolicyFlow
-        ? <WalletPolicyFlow live={live!} quote={liveQuote!} />
+        ? <WalletPolicyFlow live={live!} quote={liveQuote!} onCancel={() => setLiveQuote(undefined)} />
         : <QuoteAuctionGrid quotes={displayQuotes} selectedQuoteId={confirmedQuoteId} busyQuoteId={busy} disabled={Boolean(busy)} onSelect={accept} />}
     {!showWalletPolicyFlow && !confirmedQuoteId && <TechnicalPanel eyebrow="SIGNING DOMAIN" title="Canonical quote integrity" explanation="EIP-712 signatures bind every quote to this job, underwriter, price, expiry, and Creditcoin policy contract."><div className="integrity-grid"><span><small>DOMAIN</small><strong>TrustFutures v1</strong></span><span><small>VERIFYING CHAIN</small><strong>Creditcoin CC3 / 102031</strong></span><span><small>CAPITAL WATERFALL</small><strong>20% JUNIOR → 80% SENIOR</strong></span><span><small>ECONOMIC AUTHORITY</small><strong>MODEL OUTPUT ONLY</strong></span></div></TechnicalPanel>}
   </div>;

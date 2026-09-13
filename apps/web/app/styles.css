@@ -434,6 +434,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .quote-route > .wallet-stepper > header strong { font-size:clamp(20px,2vw,28px); }
 .quote-route > .wallet-stepper ol { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 .quote-route > .wallet-stepper .wallet-step { min-height:88px; padding:15px; }
+.wallet-stepper__actions { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; }
+.wallet-stepper__cancel { min-width:210px; color:#ff9da3; border-color:rgba(255,94,102,.42); background:rgba(255,94,102,.055); }
+.wallet-stepper__cancel:hover:not(:disabled) { color:#12090e; border-color:var(--coral); background:var(--coral); box-shadow:0 14px 34px rgba(255,94,102,.18); }
 .policy-lock-receipt { overflow:hidden; border:1px solid rgba(200,255,90,.36); border-radius:30px 8px 30px 8px; background:radial-gradient(circle at 6% 0,rgba(200,255,90,.13),transparent 36%),linear-gradient(145deg,rgba(24,38,17,.82),rgba(8,8,12,.92)); box-shadow:0 30px 100px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.035); }
 .policy-lock-receipt > header { min-height:190px; padding:clamp(24px,4vw,48px); display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:24px; }
 .policy-lock-receipt__mark { width:72px; height:72px; display:grid; place-items:center; border:1px solid rgba(200,255,90,.48); border-radius:50%; color:#101507; background:var(--lime); box-shadow:0 0 0 10px rgba(200,255,90,.045),0 0 36px rgba(200,255,90,.2); font:700 30px ui-monospace,monospace; }
@@ -598,6 +601,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .quote-card:nth-child(n) { transform: none; }
   .quote-market-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .quote-route > .wallet-stepper ol { grid-template-columns:1fr; }
+  .wallet-stepper__actions { grid-template-columns:1fr; }
+  .wallet-stepper__cancel { min-width:0; }
   .agent-matrix { grid-template-columns: 1fr; }
   .agent-matrix .technical-panel:nth-child(even) { transform: none; }
   .dashboard-grid--metrics { grid-template-columns: repeat(2,1fr); }
