@@ -51,17 +51,13 @@ export function RiskAnalyticsPanel({
         <div><span>CALIBRATED FAILURE RISK</span><strong>{probability == null ? "—" : `${(probability * 100).toFixed(1)}%`}</strong></div>
         {modelVersion && <code>{modelVersion}</code>}
       </div>
-      {compact ? (
-        <div className="risk-analytics__signals" role="list" aria-label="Key risk signals">
-          {chart.rows.slice(0, 4).map((feature) => (
-            <div key={feature.name} className={`risk-analytics__signal risk-analytics__signal--${feature.direction}`}>
-              <span>{feature.label}</span>
-              <strong>{feature.impactLabel}</strong>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="risk-analytics__chart" role="img" aria-label="SHAP feature attribution chart">
+      {compact ? <div className="risk-analytics__signals" role="img" aria-label="Strongest model signals">
+        {chart.rows.slice(0, 4).map((feature) => <div className="risk-signal" key={feature.name}>
+          <span>{feature.label}</span>
+          <div><i className={`risk-signal__bar risk-signal__bar--${feature.direction}`} style={{ width: `${Math.max(feature.magnitude, 2)}%` }} /></div>
+          <b>{feature.impactLabel}</b>
+        </div>)}
+      </div> : <div className="risk-analytics__chart" role="img" aria-label="SHAP feature attribution chart">
           <ResponsiveContainer width="100%" height={Math.max(220, chart.rows.length * 50)}>
             <BarChart data={chart.rows} layout="vertical" margin={{ top: 8, right: 18, bottom: 20, left: 24 }}>
               <CartesianGrid stroke="#152837" horizontal={false} />
@@ -77,8 +73,7 @@ export function RiskAnalyticsPanel({
           <ul className="sr-only">
             {chart.rows.map((feature) => <li key={feature.name}>{feature.label}: observed value {feature.valueLabel}; SHAP impact {feature.impactLabel}; {feature.direction}.</li>)}
           </ul>
-        </div>
-      )}
+      </div>}
       <p className="risk-analytics__summary">{explanation.summary}</p>
       <details className="model-evidence">
         <summary>Model evidence</summary>
