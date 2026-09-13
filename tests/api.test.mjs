@@ -137,3 +137,16 @@ test("live market endpoint fails clearly when public-chain reads are unavailable
   assert.equal(response.status, 503);
   assert.equal((await response.json()).code, "LIVE_MARKET_UNAVAILABLE");
 });
+
+test("live vault endpoint returns capital without waiting for market history", async () => {
+  const payload = { totalAssets: "800000000", reserved: "80000000", freeAssets: "720000000", totalShares: "800000000" };
+  const api = createApi({
+    liveVaultReader: async () => payload,
+    liveMarketReader: async () => new Promise(() => {}),
+  });
+
+  const response = await api.handle(new Request("http://local/v1/live/vault"));
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), payload);
+});

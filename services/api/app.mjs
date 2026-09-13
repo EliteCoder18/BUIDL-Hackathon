@@ -9,7 +9,7 @@ const MODEL_VERSION = "trustfutures-risk-v1-fixed-seed";
 const json = (body, status = 200) => Response.json(serialize(body), { status });
 const quoteNonce = (jobKey, strategy) => BigInt(id(`TrustFutures quote nonce:${jobKey}:${strategy}`));
 
-export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quoteSigner = null, saga = null, riskClient = createRiskClient(), liveJobVerifier = null, liveAgentHistory = null, liveSigningDomain = null, liveMarketReader = null } = {}) {
+export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quoteSigner = null, saga = null, riskClient = createRiskClient(), liveJobVerifier = null, liveAgentHistory = null, liveSigningDomain = null, liveMarketReader = null, liveVaultReader = null } = {}) {
   async function quotePayload({ jobKey, coverageAmount, history, agentId, mandateCategory = "swap", liveOutcomeCount = 0, attestedEventValid = false }) {
     const coverage = BigInt(coverageAmount);
     if (coverage > 1_000_000_000n) throw new ApiInputError("COVERAGE_LIMIT", "maximum MVP coverage is 1,000 mUSDC");
@@ -56,6 +56,10 @@ export function createApi({ queue = new ProofQueue(), agentRisk = new Map(), quo
           const client = url.searchParams.get("client");
           if (!client || !isAddress(client)) throw new ApiInputError("INVALID_CLIENT", "A valid client wallet address is required");
           return json(await liveMarketReader(getAddress(client)));
+        }
+        if (request.method === "GET" && url.pathname === "/v1/live/vault") {
+          if (!liveVaultReader) return json({ code: "LIVE_VAULT_UNAVAILABLE", error: "Public Creditcoin vault reads are not configured" }, 503);
+          return json(await liveVaultReader());
         }
         if (request.method === "POST" && url.pathname === "/v1/quotes") {
           const { jobKey, coverageAmount, history, agentId, mandateCategory, liveOutcomeCount, attestedEventValid } = await request.json();

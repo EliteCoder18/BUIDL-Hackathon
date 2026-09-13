@@ -8,7 +8,7 @@ import { PostgresProofQueue } from "../prover/postgres-proof-queue.mjs";
 import { corsHeaders } from "./cors.mjs";
 import { validateApiEnvironment } from "../deployment/config.mjs";
 import { verifyLiveJob } from "./live-job-verifier.mjs";
-import { createLiveMarketReader } from "./live-market-reader.mjs";
+import { createLiveMarketReader, createLiveVaultReader } from "./live-market-reader.mjs";
 
 const demoMode = process.env.TRUSTFUTURES_DEMO === "true";
 if (process.env.DEPLOYMENT_ENV === "render") validateApiEnvironment(process.env);
@@ -22,9 +22,14 @@ const saga = runtime ? createDemoSaga(runtime) : null;
 const quoteSigner = signerFromEnvironment();
 const liveWallet = process.env.TRUSTFUTURES_LIVE_WALLET === "true";
 const sourceProvider = liveWallet ? new JsonRpcProvider(process.env.SEPOLIA_RPC_URL, 11155111) : null;
-const liveMarketReady = [process.env.CREDITCOIN_RPC_URL, process.env.POLICY_MANAGER_ADDRESS, process.env.COVERAGE_VAULT_ADDRESS, process.env.ATTESTCOIN_OUTCOME_ADAPTER_ADDRESS, process.env.CREDITCOIN_DEPLOYMENT_BLOCK].every(Boolean);
-const creditcoinProvider = liveMarketReady ? new JsonRpcProvider(process.env.CREDITCOIN_RPC_URL, 102031) : null;
-const liveMarketReader = creditcoinProvider ? createLiveMarketReader({
+const liveVaultReady = [process.env.CREDITCOIN_RPC_URL, process.env.COVERAGE_VAULT_ADDRESS].every(Boolean);
+const liveMarketReady = [process.env.POLICY_MANAGER_ADDRESS, process.env.ATTESTCOIN_OUTCOME_ADAPTER_ADDRESS, process.env.CREDITCOIN_DEPLOYMENT_BLOCK].every(Boolean);
+const creditcoinProvider = liveVaultReady ? new JsonRpcProvider(process.env.CREDITCOIN_RPC_URL, 102031) : null;
+const liveVaultReader = creditcoinProvider ? createLiveVaultReader({
+  provider: creditcoinProvider,
+  coverageVaultAddress: process.env.COVERAGE_VAULT_ADDRESS,
+}) : null;
+const liveMarketReader = creditcoinProvider && liveMarketReady ? createLiveMarketReader({
   provider: creditcoinProvider,
   policyManagerAddress: process.env.POLICY_MANAGER_ADDRESS,
   coverageVaultAddress: process.env.COVERAGE_VAULT_ADDRESS,
@@ -43,6 +48,7 @@ const api = createApi({
   liveAgentHistory: liveWallet ? (agentId) => agentId === liveAgentId ? saga?.getAgents()[0]?.history : null : null,
   liveSigningDomain: liveWallet ? { chainId: 102031, verifyingContract: process.env.POLICY_MANAGER_ADDRESS } : null,
   liveMarketReader,
+  liveVaultReader,
 });
 const server = createServer(async (req, res) => {
   const cors = corsHeaders(req.headers.origin);

@@ -106,6 +106,19 @@ test("read methods parse the API's plain resource responses", async () => {
   });
 });
 
+test("public vault read uses the fast capital endpoint", async () => {
+  let requestedUrl = "";
+  const api = createTrustFuturesApi({
+    fetch: async (input) => {
+      requestedUrl = String(input);
+      return Response.json({ totalAssets: "800000000", reserved: "80000000", freeAssets: "720000000", totalShares: "800000000" });
+    },
+  });
+
+  assert.equal((await api.getLiveVault()).freeAssets, "720000000");
+  assert.equal(requestedUrl, "http://127.0.0.1:3001/v1/live/vault");
+});
+
 test("public market reads validate and preserve wallet policy history", async () => {
   let requestedUrl = "";
   const wallet = `0x${"44".repeat(20)}` as const;

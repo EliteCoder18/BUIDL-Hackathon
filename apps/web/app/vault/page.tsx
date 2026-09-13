@@ -31,19 +31,30 @@ export default function VaultPage() {
       return () => { active = false; };
     }
 
-    const request = mode === "wallet"
-      ? api.getLiveMarket(address!).then((market) => {
-        if (!active) return;
-        setVault(market.vault);
-        setActivePolicyCount(market.activePolicyCount);
-      })
-      : api.getVault().then((nextVault) => {
+    if (mode === "wallet") {
+      const capitalRequest = api.getLiveVault().then((nextVault) => {
         if (active) setVault(nextVault);
+        return nextVault;
       });
-
-    request.catch((cause) => {
-      if (active) setError(cause instanceof Error ? cause.message : "Vault unavailable");
-    });
+      const historyRequest = api.getLiveMarket(address!).then((market) => {
+        if (active) {
+          setVault((current) => current ?? market.vault);
+          setActivePolicyCount(market.activePolicyCount);
+        }
+        return market;
+      });
+      Promise.allSettled([capitalRequest, historyRequest]).then(([capital, history]) => {
+        if (!active || capital.status === "fulfilled" || history.status === "fulfilled") return;
+        const cause = capital.reason;
+        setError(cause instanceof Error ? cause.message : "Vault unavailable");
+      });
+    } else {
+      api.getVault().then((nextVault) => {
+        if (active) setVault(nextVault);
+      }).catch((cause) => {
+        if (active) setError(cause instanceof Error ? cause.message : "Vault unavailable");
+      });
+    }
     return () => { active = false; };
   }, [address, api, mode]);
   const assets = units(vault?.totalAssets);

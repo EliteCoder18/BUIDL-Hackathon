@@ -99,6 +99,7 @@ export function createTrustFuturesApi(options: TrustFuturesApiOptions = {}) {
     getQuotes: (jobKey: Bytes32): Promise<AuctionResource> => request(`/v1/quotes/${jobKey}`, parseAuction),
     getPolicy: (policyId: Bytes32): Promise<PolicyResource> => request(`/v1/policies/${policyId}`, parsePolicy),
     getVault: (): Promise<VaultResource> => request("/v1/vault", parseVault),
+    getLiveVault: (): Promise<VaultResource> => request("/v1/live/vault", parseVault),
     getProof: (jobKey: Bytes32): Promise<ProofResource> => request(`/v1/proofs/${jobKey}`, parseProof),
     createJob: (input: CreateJobInput) => command("/v1/jobs", parseJob, input),
     openAuction: (jobKey: Bytes32) => command(`/v1/jobs/${jobKey}/open-auction`, parseAuction, {}),

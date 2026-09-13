@@ -14,6 +14,16 @@ const vaultAbi = [
   "function totalShares() view returns (uint256)",
 ];
 
+export function createLiveVaultReader({ provider, coverageVaultAddress }) {
+  const vault = new Contract(coverageVaultAddress, vaultAbi, provider);
+  return async function readLiveVault() {
+    const [totalAssets, reserved, freeAssets, totalShares] = await Promise.all([
+      vault.totalAssets(), vault.reserved(), vault.freeAssets(), vault.totalShares(),
+    ]);
+    return Object.fromEntries(Object.entries({ totalAssets, reserved, freeAssets, totalShares }).map(([key, value]) => [key, value.toString()]));
+  };
+}
+
 function eventTopic(iface, name) {
   return iface.getEvent(name).topicHash;
 }
@@ -45,6 +55,7 @@ export function createLiveMarketReader({
 }) {
   let cachedSnapshot;
   let cachedAt = 0;
+  let pendingSnapshot;
   const loadVault = readVault ?? (async () => {
     const vault = new Contract(coverageVaultAddress, vaultAbi, provider);
     const [totalAssets, reserved, freeAssets, totalShares] = await Promise.all([
@@ -55,20 +66,28 @@ export function createLiveMarketReader({
 
   async function loadSnapshot() {
     if (cachedSnapshot && Date.now() - cachedAt < 15_000) return cachedSnapshot;
-    const latestBlock = await provider.getBlockNumber();
-    const [allLogs, vault] = await Promise.all([
-      logsInChunks(provider, { address: [policyManagerAddress, outcomeAdapterAddress] }, fromBlock, latestBlock, chunkSize),
-      loadVault(),
-    ]);
-    const snapshot = {
-      acceptedLogs: allLogs.filter((log) => log.address.toLowerCase() === policyManagerAddress.toLowerCase() && log.topics[0] === eventTopic(policyInterface, "PolicyAccepted")),
-      settledLogs: allLogs.filter((log) => log.address.toLowerCase() === policyManagerAddress.toLowerCase() && log.topics[0] === eventTopic(policyInterface, "PolicySettled")),
-      proofLogs: allLogs.filter((log) => log.address.toLowerCase() === outcomeAdapterAddress.toLowerCase() && log.topics[0] === eventTopic(outcomeInterface, "OutcomeProven")),
-      vault,
-    };
-    cachedSnapshot = snapshot;
-    cachedAt = Date.now();
-    return snapshot;
+    if (pendingSnapshot) return pendingSnapshot;
+    pendingSnapshot = (async () => {
+      const latestBlock = await provider.getBlockNumber();
+      const [allLogs, vault] = await Promise.all([
+        logsInChunks(provider, { address: [policyManagerAddress, outcomeAdapterAddress] }, fromBlock, latestBlock, chunkSize),
+        loadVault(),
+      ]);
+      const snapshot = {
+        acceptedLogs: allLogs.filter((log) => log.address.toLowerCase() === policyManagerAddress.toLowerCase() && log.topics[0] === eventTopic(policyInterface, "PolicyAccepted")),
+        settledLogs: allLogs.filter((log) => log.address.toLowerCase() === policyManagerAddress.toLowerCase() && log.topics[0] === eventTopic(policyInterface, "PolicySettled")),
+        proofLogs: allLogs.filter((log) => log.address.toLowerCase() === outcomeAdapterAddress.toLowerCase() && log.topics[0] === eventTopic(outcomeInterface, "OutcomeProven")),
+        vault,
+      };
+      cachedSnapshot = snapshot;
+      cachedAt = Date.now();
+      return snapshot;
+    })();
+    try {
+      return await pendingSnapshot;
+    } finally {
+      pendingSnapshot = undefined;
+    }
   }
 
   return async function readLiveMarket(client) {

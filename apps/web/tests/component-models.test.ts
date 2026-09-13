@@ -65,6 +65,13 @@ test("compact quote analytics use a scannable signal ledger", () => {
   assert.match(source, /chart\.rows\.slice\(0, 4\)/);
 });
 
+test("public vault renders the fast capital snapshot independently of policy history", () => {
+  const source = readFileSync(new URL("../app/vault/page.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /api\.getLiveVault\(\)/);
+  assert.match(source, /Promise\.allSettled/);
+});
+
 test("slashed waterfall consumes the 20% junior tranche before senior capital", () => {
   assert.deepEqual(calculateWaterfall(1_000, 150), {
     coverage: 1_000,

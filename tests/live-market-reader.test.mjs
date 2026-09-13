@@ -84,3 +84,24 @@ test("settled wallet policies include their final state and settlement transacti
   assert.equal(policy.clientPayout, "100000000");
   assert.equal(policy.settlementTxHash, `0x${"05".repeat(32)}`);
 });
+
+test("concurrent public market reads share one historical scan", async () => {
+  let headReads = 0;
+  const provider = {
+    getBlockNumber: async () => { headReads += 1; return 101; },
+    getLogs: async () => [],
+    getBlock: async () => ({ timestamp: 1_789_200_000 }),
+  };
+  const read = createLiveMarketReader({
+    provider,
+    policyManagerAddress: manager,
+    outcomeAdapterAddress: adapter,
+    coverageVaultAddress: vault,
+    fromBlock: 100,
+    readVault: async () => ({ totalAssets: 0n, reserved: 0n, freeAssets: 0n, totalShares: 0n }),
+  });
+
+  await Promise.all([read(client), read(otherClient)]);
+
+  assert.equal(headReads, 1);
+});
