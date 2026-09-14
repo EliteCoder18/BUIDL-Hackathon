@@ -7,10 +7,10 @@ import { ACTIVE_JOURNEY_KEY, isJourneyPath, parseJourneyPath } from "../../lib/j
 import { StatusChip } from "./StatusChip";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Operations", index: "01" },
+  { href: "/", label: "Overview", index: "01" },
   { href: "/agents", label: "Agents", index: "02" },
   { href: "/jobs/new", label: "Create job", index: "03" },
-  { href: "/vault", label: "LP vault", index: "04" },
+  { href: "/vault", label: "Liquidity", index: "04" },
 ] as const;
 
 export interface TechnicalShellProps {
@@ -62,7 +62,7 @@ export function TechnicalShell({
         <Link className="orbital-brand" href="/" aria-label="TrustFutures operations home">
           <span className="orbital-brand__sigil" aria-hidden="true"><i /><i /></span>
           <span className="orbital-brand__wordmark"><strong>TRUST</strong><em>FUTURES</em></span>
-          <small>RISK OBSERVATORY</small>
+          <small>AI AGENT INSURANCE</small>
         </Link>
 
         <nav className="orbital-nav" aria-label="Primary">
@@ -72,8 +72,14 @@ export function TechnicalShell({
             const href = journeyItem ? journeyHref : item.href;
             const label = journeyItem && journeyHref !== "/jobs/new" ? "Resume job" : item.label;
             return (
-              <Link key={item.href} href={href} className={`orbital-nav__item${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined}>
-                <span>{item.index}</span><b>{label}</b>
+              <Link
+                key={item.href}
+                href={href}
+                className={`orbital-nav__item${active ? " is-active" : ""}${journeyItem ? " is-primary" : ""}`}
+                aria-current={active ? "page" : undefined}
+                aria-label={label}
+              >
+                <span aria-hidden="true">{item.index}</span><b>{label}</b>
               </Link>
             );
           })}

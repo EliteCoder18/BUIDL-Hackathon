@@ -1,7 +1,5 @@
 "use client";
 
-import "@rainbow-me/rainbowkit/styles.css";
-import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { useMemo } from "react";
 import { createConfig, http, WagmiProvider } from "wagmi";
 import { injected, walletConnect } from "wagmi/connectors";
@@ -23,5 +21,5 @@ export function ExternalWalletProviders({ children, projectId }: { children: Rea
       ssr: true,
     });
   }, [projectId]);
-  return <WagmiProvider config={config}><RainbowKitProvider>{children}</RainbowKitProvider></WagmiProvider>;
+  return <WagmiProvider config={config}>{children}</WagmiProvider>;
 }

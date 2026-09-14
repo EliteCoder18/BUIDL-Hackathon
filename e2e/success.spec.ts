@@ -6,8 +6,8 @@ test("mandate settles successfully and splits premium 30/70", async ({ page, req
   await createQuotedJob(page, "success");
   await acceptBalancedPolicy(page);
   const policyUrl = page.url();
-  await page.getByRole("link", { name: "01 Operations" }).click();
-  const resumePolicy = page.getByRole("link", { name: "03 Resume job" });
+  await page.getByRole("link", { name: "Overview" }).click();
+  const resumePolicy = page.getByRole("link", { name: "Resume job" });
   await expect(resumePolicy).toHaveAttribute("href", new URL(policyUrl).pathname);
   await resumePolicy.click();
   await expect(page).toHaveURL(policyUrl);

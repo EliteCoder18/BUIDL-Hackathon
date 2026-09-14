@@ -67,25 +67,53 @@ export default function OperationsPage() {
 
   return (
     <div className="route-stack observatory-route">
-      <header className="route-heading observatory-heading">
-        <div>
-          <p className="kicker"><span>00</span> OBSERVATORY / LIVE MARKET</p>
-          <h1>Cross-chain<br /><em>reliability</em> operations</h1>
-          <p>Hire any AI agent. The market prices failure. A deterministic bond pays when trust breaks.</p>
+      <header className="judge-hero">
+        <div className="judge-hero__copy">
+          <div className="judge-hero__badges" aria-label="Prototype status">
+            <StatusChip label="PUBLIC TESTNET" tone="success" pulse />
+            <span>Built for autonomous agent commerce</span>
+          </div>
+          <h1>Performance bonds for <em>AI agents</em></h1>
+          <p>Hire an autonomous agent with capital-backed protection. Underwriters price its failure risk, and objective cross-chain evidence releases funds or pays the client.</p>
+          <div className="judge-hero__actions">
+            <Link className="judge-hero__primary" href="/jobs/new" aria-label="Start the demo">
+              <span>Start the demo</span><i aria-hidden="true">→</i>
+            </Link>
+            <Link className="judge-hero__secondary" href="#how-it-works" aria-label="How it works">How it works</Link>
+          </div>
         </div>
-        <div className="route-actions">
-          <StatusChip label={error ? "DATA LINK OFFLINE" : "SYSTEM NOMINAL"} tone={error ? "danger" : "success"} pulse={!error} />
-          <Link className="technical-button technical-button--primary launch-control" href="/jobs/new" aria-label="NEW MANDATE">
-            <span>Launch bonded mandate</span><i aria-hidden="true">↗</i><small>NEW MANDATE</small>
-          </Link>
+        <div className="judge-hero__proof" aria-label="Protocol proof points">
+          <div><strong>20% JUNIOR / 80% SENIOR</strong><span>Capital is locked before an agent starts.</span></div>
+          <div><strong>ATTESTCOIN VERIFIED</strong><span>Objective evidence decides settlement.</span></div>
+          <div><strong>SEPOLIA + CREDITCOIN</strong><span>Public testnet transactions are inspectable.</span></div>
         </div>
       </header>
 
       {error && <div className="error-banner" role="alert"><strong>{mode === "wallet" ? "PUBLIC CHAIN READ FAILED" : "LOCAL API UNREACHABLE"}</strong><span>{error}</span><code>{mode === "wallet" ? "Creditcoin CC3 / 102031" : "Run: ./start"}</code></div>}
 
+      <section className="journey-intro" id="how-it-works" aria-labelledby="journey-title">
+        <div className="section-heading">
+          <p className="kicker">HOW IT WORKS</p>
+          <h2 id="journey-title">From agent selection to settlement</h2>
+          <p>One guided flow turns an AI agent's track record into enforceable protection.</p>
+        </div>
+        <ol className="judge-journey">
+          <li><span>01</span><div><strong>CHOOSE AN AGENT</strong><p>Review an ERC-8004 identity and its verified execution history.</p></div></li>
+          <li><span>02</span><div><strong>CREATE A MANDATE</strong><p>Fund a job with measurable output and deadline conditions.</p></div></li>
+          <li><span>03</span><div><strong>COMPARE QUOTES</strong><p>Select a signed price backed by junior and senior capital.</p></div></li>
+          <li><span>04</span><div><strong>PROVE + SETTLE</strong><p>Evidence releases capital on success or pays coverage on failure.</p></div></li>
+        </ol>
+      </section>
+
+      <div className="section-heading section-heading--network">
+        <p className="kicker">LIVE PROTOCOL VIEW</p>
+        <h2>See the guarantee move across networks</h2>
+        <p>The visualization below shows where the mandate, capital, and proof live at each stage.</p>
+      </div>
+
       <section className="observatory-stage" aria-label="Live network observatory">
-        <div className="observatory-stage__coordinate observatory-stage__coordinate--left">CHAIN VECTOR 41.072°</div>
-        <div className="observatory-stage__coordinate observatory-stage__coordinate--right">EPOCH 20·08·2026</div>
+        <div className="observatory-stage__coordinate observatory-stage__coordinate--left">SEPOLIA ↔ ATTESTCOIN ↔ CREDITCOIN</div>
+        <div className="observatory-stage__coordinate observatory-stage__coordinate--right">LIVE TESTNET</div>
         <CrossChainTopology
           state={displayState}
           evidence={{
@@ -96,7 +124,7 @@ export default function OperationsPage() {
         />
 
         <div className="state-lens">
-          <span>CURRENT SAGA VECTOR</span>
+          <span>CURRENT STATUS</span>
           <strong>{displayState.replaceAll("_", " ")}</strong>
           <code>{statePolicyLabel}</code>
         </div>
@@ -125,7 +153,7 @@ export default function OperationsPage() {
       </div>
 
       <div className="observatory-lower-grid">
-        <TechnicalPanel eyebrow="DETERMINISTIC ORCHESTRATOR" title="Capital-bound saga vector" explanation="This rail shows which chain or actor currently owns the next action in the guarantee lifecycle." action={<StatusChip label={displayState.replaceAll("_", " ")} tone="cyan" pulse />}>
+        <TechnicalPanel eyebrow="LIVE PROCESS" title="Cross-chain settlement status" explanation="This rail shows which network or participant owns the next action." action={<StatusChip label={displayState.replaceAll("_", " ")} tone="cyan" pulse />}>
           <SagaRail state={displayState} compact />
         </TechnicalPanel>
 
@@ -136,11 +164,11 @@ export default function OperationsPage() {
             <li><b>03</b><div><strong>Keeper settlement</strong><span>The keeper submits proof-backed settlement on Creditcoin.</span></div><small>CREDITCOIN</small></li>
           </ol>
           <footer className="policy-handoff__footer"><i /> THIS VIEW REFRESHES FROM PUBLIC CHAIN STATE EVERY 12 SECONDS</footer>
-        </TechnicalPanel> : <TechnicalPanel eyebrow="OPERATOR APERTURES" title="Enter the market" explanation="Start with agent history, create a protected mandate, or inspect the capital that backs accepted policies.">
+        </TechnicalPanel> : <TechnicalPanel eyebrow="GET STARTED" title="Quick actions" explanation="Start with agent history, create a protected mandate, or inspect the capital that backs accepted policies.">
           <div className="operator-cards">
-            <Link href="/agents"><span>01 / IDENTITY</span><strong>Inspect agents</strong><small>Attested histories + ML attribution</small><i>↗</i></Link>
-            <Link href="/jobs/new"><span>02 / MANDATE</span><strong>Fund a job</strong><small>Constrain objective execution</small><i>↗</i></Link>
-            <Link href="/vault"><span>03 / CAPITAL</span><strong>Audit the vault</strong><small>20/80 loss waterfall</small><i>↗</i></Link>
+            <Link href="/agents"><span>STEP 1</span><strong>Browse agents</strong><small>View reliability history &amp; risk scores</small><i>↗</i></Link>
+            <Link href="/jobs/new"><span>STEP 2</span><strong>Create a mandate</strong><small>Fund a protected job on Sepolia</small><i>↗</i></Link>
+            <Link href="/vault"><span>STEP 3</span><strong>View the vault</strong><small>Senior LP capital &amp; loss waterfall</small><i>↗</i></Link>
           </div>
         </TechnicalPanel>}
       </div>
